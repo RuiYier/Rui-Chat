@@ -15,7 +15,15 @@ defineProps<{
   <!-- User message -->
   <div v-if="message.role === 'user'" :style="{ width: '100%', padding: '16px 0' }">
     <div :style="{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: '8px' }">
-      <div :style="{ maxWidth: '70%' }">
+      <div :style="{ maxWidth: '70%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }">
+        <!-- File attachments -->
+        <div v-if="message.attachments && message.attachments.length > 0" :style="{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'flex-end' }">
+          <div v-for="(att, i) in message.attachments" :key="i" :style="{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '8px', fontSize: '13px', background: att.name.endsWith('.md') ? '#FFF7ED' : '#EFF6FF', border: att.name.endsWith('.md') ? '1px solid #FDBA74' : '1px solid #93C5FD', color: att.name.endsWith('.md') ? '#C2410C' : '#1D4ED8' }">
+            <el-icon :size="14"><Document /></el-icon>
+            <span>{{ att.name }}</span>
+          </div>
+        </div>
+        <!-- Message content -->
         <div :style="{ borderRadius: '24px', background: 'var(--message-user-bg)', padding: '12px 20px', color: 'var(--text-primary)' }">
           <p :style="{ fontSize: '15px', lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }">{{ message.content }}</p>
         </div>
