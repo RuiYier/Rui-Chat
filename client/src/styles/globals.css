@@ -133,9 +133,10 @@ html, body, #app {
   font-style: italic;
 }
 .prose-container pre {
-  background: var(--input-bg);
+  background: #F4F4F4;
+  border: none;
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   overflow-x: auto;
   margin: 1rem 0;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
@@ -187,13 +188,12 @@ html, body, #app {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--input-bg);
-  border-radius: 0.75rem 0.75rem 0 0;
-  padding: 0.5rem 1rem;
+  background: transparent;
+  padding: 0.25rem 0.75rem;
   font-size: 12px;
   color: var(--text-secondary);
 }
 .code-block-header + pre {
-  border-radius: 0 0 0.75rem 0.75rem;
+  border-radius: 0.75rem;
   margin-top: 0;
 }

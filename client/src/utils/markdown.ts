@@ -21,7 +21,7 @@ const md = new MarkdownIt({
     }
 
     // Sky-Chat style code block with header
-    return `<div class="code-block-header"><span>${langLabel}</span><button onclick="navigator.clipboard.writeText(this.closest('.code-block-header').nextElementSibling.querySelector('code').textContent)" style="background:none;border:none;color:inherit;cursor:pointer;font-size:12px">复制</button></div><pre><code class="hljs language-${lang}">${highlighted}</code></pre>`
+    return `<div class="code-block-header"><span>${langLabel}</span><button onclick="navigator.clipboard.writeText(this.closest('.code-block-header').nextElementSibling.querySelector('code').textContent).then(()=>{this.textContent='已复制';setTimeout(()=>{this.textContent='复制'},1500)})" style="background:none;border:none;color:inherit;cursor:pointer;font-size:12px">复制</button></div><pre><code class="hljs language-${lang}">${highlighted}</code></pre>`
   },
 })
 
