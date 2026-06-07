@@ -23,7 +23,6 @@
   --accent-red: #EF4444;
   --border: #ECECEC;
   --ring: #3B82F6;
-  --radius: 0.75rem;
 }
 
 /* Dark Theme - VSCode Dark+ inspired */
@@ -49,7 +48,6 @@ html.dark {
   --accent-red: #EF4444;
   --border: #333333;
   --ring: #007acc;
-  --radius: 0.375rem;
 }
 
 * {
@@ -94,18 +92,9 @@ html, body, #app {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
 }
 
 .cursor-blink {
@@ -133,7 +122,7 @@ html, body, #app {
   font-style: italic;
 }
 .prose-container pre {
-  background: #F4F4F4;
+  background: var(--input-bg);
   border: none;
   border-radius: 0.75rem;
   padding: 0.5rem 0.75rem;
@@ -144,7 +133,6 @@ html, body, #app {
   line-height: 1.6;
 }
 .prose-container code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
   font-size: 0.9em;
 }
 .prose-container p code, .prose-container li code, .prose-container td code {
@@ -196,4 +184,11 @@ html, body, #app {
 .code-block-header + pre {
   border-radius: 0.75rem;
   margin-top: 0;
+}
+
+/* Element Plus Message - consistent border-radius */
+.el-message {
+  border-radius: 12px !important;
+  padding: 12px 20px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
