@@ -95,10 +95,11 @@ async function handleRegister() {
   <el-dialog
     :model-value="modelValue"
     @update:model-value="(val: boolean) => { if (!val && !closing) handleClose(); closing = false }"
-    width="420px"
+    width="448px"
     :close-on-click-modal="false"
     :show-close="true"
     @open="resetState"
+    class="login-dialog"
   >
     <!-- ====== OAuth2 视图 ====== -->
     <template v-if="view === 'oauth'">
@@ -329,3 +330,30 @@ async function handleRegister() {
     </template>
   </el-dialog>
 </template>
+
+<style>
+/* Override el-dialog CSS variables to match Sky-Chat style */
+.login-dialog {
+  --el-dialog-border-radius: 16px;
+  --el-dialog-margin-top: 20vh;
+  --el-dialog-width: 448px;
+}
+
+.login-dialog .el-dialog {
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  background: var(--background);
+}
+
+.login-dialog .el-dialog__header {
+  display: none;
+}
+
+.login-dialog .el-dialog__body {
+  padding: 24px;
+}
+
+.login-dialog .el-dialog__headerbtn {
+  display: none;
+}
+</style>
