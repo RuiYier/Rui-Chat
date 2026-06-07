@@ -1,0 +1,18 @@
+{
+  "name": "rui-chat",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
+    "dev:client": "pnpm --filter client dev",
+    "dev:server": "pnpm --filter server dev",
+    "build": "pnpm --filter client build && pnpm --filter server build",
+    "db:generate": "pnpm --filter server prisma:generate",
+    "db:migrate": "pnpm --filter server prisma:migrate",
+    "db:studio": "pnpm --filter server prisma:studio",
+    "db:seed": "pnpm --filter server prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
