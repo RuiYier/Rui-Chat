@@ -132,11 +132,6 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
               </div>
             </div>
 
-            <!-- Thinking -->
-            <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: chatStore.config.thinking ? 'var(--accent-thinking)' : 'transparent', color: chatStore.config.thinking ? '#fff' : 'var(--text-tertiary)' }" @click="chatStore.toggleThinking()">
-              <el-icon :size="18"><MagicStick /></el-icon>
-            </button>
-
             <!-- Search -->
             <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: chatStore.config.webSearch ? '#3B82F6' : 'transparent', color: chatStore.config.webSearch ? '#fff' : 'var(--text-tertiary)' }" @click="chatStore.toggleWebSearch()">
               <el-icon :size="18"><Search /></el-icon>
@@ -148,21 +143,30 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
             </button>
           </div>
 
-          <!-- Send -->
-          <button
-            v-if="chatStore.streaming"
-            :style="{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: 'var(--button-primary-bg)', color: '#fff' }"
-          >
-            <el-icon :size="16"><VideoPause /></el-icon>
-          </button>
-          <button
-            v-else
-            :style="{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: canSend ? 'pointer' : 'not-allowed', background: canSend ? 'var(--button-primary-bg)' : 'var(--input-bg)', color: canSend ? '#fff' : 'var(--text-tertiary)' }"
-            :disabled="!canSend"
-            @click="handleSend"
-          >
-            <el-icon :size="16"><Promotion /></el-icon>
-          </button>
+          <!-- Right group: thinking + send -->
+          <div :style="{ display: 'flex', alignItems: 'center', gap: '8px' }">
+            <!-- Thinking toggle -->
+            <button
+              :style="{ height: '32px', padding: '0 16px', borderRadius: '16px', fontSize: '13px', fontWeight: '500', border: chatStore.config.thinking ? '1.5px solid #3B82F6' : '1.5px solid var(--border)', cursor: 'pointer', background: chatStore.config.thinking ? '#3B82F6' : 'transparent', color: chatStore.config.thinking ? '#fff' : 'var(--text-tertiary)', transition: 'all 0.2s', whiteSpace: 'nowrap' }"
+              @click="chatStore.toggleThinking()"
+            >深度思考</button>
+
+            <!-- Send -->
+            <button
+              v-if="chatStore.streaming"
+              :style="{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: 'var(--button-primary-bg)', color: '#fff' }"
+            >
+              <el-icon :size="16"><VideoPause /></el-icon>
+            </button>
+            <button
+              v-else
+              :style="{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: canSend ? 'pointer' : 'not-allowed', background: canSend ? 'var(--button-primary-bg)' : 'var(--input-bg)', color: canSend ? '#fff' : 'var(--text-tertiary)' }"
+              :disabled="!canSend"
+              @click="handleSend"
+            >
+              <el-icon :size="16"><Promotion /></el-icon>
+            </button>
+          </div>
         </div>
       </div>
 

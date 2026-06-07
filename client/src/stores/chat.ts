@@ -17,7 +17,7 @@ export const useChatStore = defineStore('chat', () => {
 
   const config = ref<ChatConfig>({
     model: DEFAULT_MODEL,
-    thinking: false,
+    thinking: true,
     webSearch: false,
   })
 
