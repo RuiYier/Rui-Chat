@@ -89,7 +89,7 @@ export class ChatService {
     const contextMessages = buildContextMessages(history.slice(0, -2), {
       role: 'user',
       content: userMsgContent,
-    })
+    }, attachments)
 
     // Set up SSE
     const sseWriter = new SSEWriter(res)

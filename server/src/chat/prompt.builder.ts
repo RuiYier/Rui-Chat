@@ -41,13 +41,14 @@ ${context.attachments.map(a => `### ${a.name}\n${a.content}`).join('\n\n')}`
 export function buildContextMessages(
   history: Array<{ role: string; content: string; thinking?: string | null }>,
   currentUserMessage: any,
+  attachments?: Array<{ name: string; content: string }>,
 ): any[] {
   const messages: any[] = []
 
   // Add system prompt
   messages.push({
     role: 'system',
-    content: buildSystemPrompt({ hasWebSearch: true }),
+    content: buildSystemPrompt({ hasWebSearch: true, attachments }),
   })
 
   // Add conversation history (last 20 messages for context window)
