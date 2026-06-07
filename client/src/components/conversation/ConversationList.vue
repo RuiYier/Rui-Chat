@@ -29,8 +29,7 @@ async function handleShare(conv: Conversation) {
 
 <template>
   <div>
-    <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }">
-      <el-icon :size="14"><Clock /></el-icon>
+    <div :style="{ padding: '8px 12px', marginBottom: '8px', fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }">
       历史会话
     </div>
     <div :style="{ display: 'flex', flexDirection: 'column', gap: '2px' }">
@@ -42,7 +41,6 @@ async function handleShare(conv: Conversation) {
         @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)'"
         @mouseleave="($event.currentTarget as HTMLElement).style.background = currentId === conv.id ? 'var(--sidebar-active)' : 'transparent'"
       >
-        <el-icon :size="14" :style="{ color: 'var(--text-tertiary)', flexShrink: 0 }"><ChatSquare /></el-icon>
         <input v-if="editingId === conv.id" v-model="editTitle" :style="{ flex: 1, minWidth: 0, background: 'transparent', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 8px', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }" @blur="confirmRename" @keydown.enter="confirmRename" @keydown.escape="editingId = null" @click.stop />
         <span v-else :style="{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '14px' }">{{ conv.title }}</span>
         <el-icon v-if="conv.isPinned" :size="12" style="color:var(--accent-green);flex-shrink:0"><Star /></el-icon>
