@@ -14,6 +14,7 @@ const authStore = useAuthStore()
 // View state: 'oauth' | 'email-login' | 'email-register'
 const view = ref<'oauth' | 'email-login' | 'email-register'>('oauth')
 const loading = ref(false)
+const closing = ref(false)
 const loginForm = reactive({ username: '', password: '' })
 const registerForm = reactive({ username: '', password: '', confirmPassword: '', email: '' })
 
@@ -50,6 +51,7 @@ async function handleLogin() {
   try {
     await authStore.login(loginForm.username, loginForm.password)
     ElMessage.success('登录成功')
+    closing.value = true
     resetState()
     emit('success')
   } catch (err: any) {
@@ -78,6 +80,7 @@ async function handleRegister() {
     // 注册成功后自动登录
     await authStore.login(registerForm.username, registerForm.password)
     ElMessage.success('注册成功')
+    closing.value = true
     resetState()
     emit('success')
   } catch (err: any) {
@@ -91,7 +94,7 @@ async function handleRegister() {
 <template>
   <el-dialog
     :model-value="modelValue"
-    @update:model-value="(val: boolean) => val ? null : handleClose()"
+    @update:model-value="(val: boolean) => { if (!val && !closing) handleClose(); closing = false }"
     width="420px"
     :close-on-click-modal="false"
     :show-close="true"
