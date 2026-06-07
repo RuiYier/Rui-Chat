@@ -37,6 +37,8 @@ Vue 3 Composition API with `<script setup>`. Pinia stores use the setup function
 
 Key pattern: The `chat` store manages a `MessageState` state machine per message with phases: `idle → thinking → tool_calling → answering → idle/error`. State transitions are pure functions in `client/src/utils/message-state.ts`.
 
+Voice playback: The headset button on AI messages plays TTS directly using the selected voice (from `chatStore.selectedVoice`). Voice selection UI is only in `ChatInput.vue`'s toolbar dropdown.
+
 ### Backend (server/)
 
 NestJS with global `/api` prefix. All routes use `class-validator` DTOs via global `ValidationPipe`. Auth uses Passport.js with JWT, local, Google, and GitHub strategies.
