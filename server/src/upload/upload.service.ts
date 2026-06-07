@@ -10,7 +10,10 @@ export class UploadService {
       throw new BadRequestException('请上传文件')
     }
 
-    const ext = '.' + file.originalname.split('.').pop()?.toLowerCase()
+    // Decode filename from Latin-1 to UTF-8 for Chinese characters
+    const originalName = Buffer.from(file.originalname, 'latin1').toString('utf-8')
+
+    const ext = '.' + originalName.split('.').pop()?.toLowerCase()
     if (!this.allowedTypes.includes(ext)) {
       throw new BadRequestException('只支持 .txt 和 .md 文件')
     }
@@ -22,7 +25,7 @@ export class UploadService {
     const content = file.buffer.toString('utf-8')
 
     return {
-      name: file.originalname,
+      name: originalName,
       content,
       size: file.size,
     }
