@@ -98,12 +98,12 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
       </div>
 
       <!-- Input card -->
-      <div :style="{ borderRadius: '24px', padding: '12px', background: 'var(--background)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', transition: 'box-shadow 0.2s' }">
+      <div :style="{ borderRadius: '24px', padding: '12px', background: 'var(--background)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', transition: 'box-shadow 0.2s', cursor: 'default' }">
         <!-- Text -->
         <input
           v-model="inputText"
           :placeholder="isRecording ? '正在录音...' : '输入消息...'"
-          :style="{ width: '100%', height: '48px', padding: '0 20px', fontSize: '15px', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)' }"
+          :style="{ width: '100%', height: '48px', padding: '0 20px', fontSize: '15px', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', cursor: 'text' }"
           :disabled="isRecording"
           @keydown="handleKeydown"
         />
