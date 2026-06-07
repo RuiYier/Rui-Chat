@@ -3,12 +3,11 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LoginDialog from '@/components/auth/LoginDialog.vue'
-import RegisterDialog from '@/components/auth/RegisterDialog.vue'
+import LandingTutorial from '@/components/landing/LandingTutorial.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const showLogin = ref(false)
-const showRegister = ref(false)
 const inputValue = ref('')
 
 if (authStore.isAuthenticated) {
@@ -17,11 +16,6 @@ if (authStore.isAuthenticated) {
 
 function onLoginSuccess() {
   showLogin.value = false
-  router.push('/chat')
-}
-
-function onRegisterSuccess() {
-  showRegister.value = false
   router.push('/chat')
 }
 
@@ -37,7 +31,7 @@ function handleSend() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[var(--background)]">
+  <div :style="{ minHeight: '100vh', background: 'var(--background)' }">
     <div
       :style="{
         display: 'flex',
@@ -92,12 +86,14 @@ function handleSend() {
               { icon: 'Share', title: '一键分享', desc: '生成分享链接，让他人也能看到精彩对话' },
             ]"
             :key="feature.title"
+            class="feature-card"
             :style="{
               padding: '24px',
               borderRadius: '12px',
               border: '1px solid var(--border)',
               background: 'var(--background)',
-              transition: 'all 0.2s',
+              cursor: 'default',
+              transition: 'box-shadow 0.2s, border-color 0.2s',
             }"
           >
             <div
@@ -174,7 +170,10 @@ function handleSend() {
                 cursor: 'pointer',
                 background: 'var(--button-primary-bg)',
                 color: '#fff',
+                transition: 'opacity 0.2s',
               }"
+              @mouseenter="($event.target as HTMLElement).style.opacity = '0.85'"
+              @mouseleave="($event.target as HTMLElement).style.opacity = '1'"
               @click="handleSend"
             >
               <el-icon :size="18"><Promotion /></el-icon>
@@ -194,7 +193,14 @@ function handleSend() {
       </div>
     </div>
 
-    <LoginDialog v-model="showLogin" @success="onLoginSuccess" @switch-to-register="showLogin = false; showRegister = true" />
-    <RegisterDialog v-model="showRegister" @success="onRegisterSuccess" @switch-to-login="showRegister = false; showLogin = true" />
+    <LoginDialog v-model="showLogin" @success="onLoginSuccess" />
+    <LandingTutorial />
   </div>
 </template>
+
+<style scoped>
+.feature-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: var(--ring);
+}
+</style>
