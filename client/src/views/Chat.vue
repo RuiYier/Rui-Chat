@@ -29,7 +29,7 @@ onMounted(async () => {
 })
 
 watch(() => route.params.id, async (newId) => {
-  if (newId && typeof newId === 'string') {
+  if (newId && typeof newId === 'string' && newId !== chatStore.currentConversationId) {
     chatStore.setConversation(newId)
     await chatStore.loadMessages(newId)
   }
