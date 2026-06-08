@@ -1,6 +1,6 @@
 # Rui Chat
 
-基于小米 MiMo 大模型的智能对话助手，使用 Vue 3 + NestJS 全栈架构。
+基于小米 MiMo 大模型的智能对话助手，使用 Vue 3 + NestJS 全栈架构。支持语音输入、语音合成、图片识别 、深度思考过程、对话分享导出等。
 
 ## 技术栈
 
@@ -11,9 +11,8 @@
 - **状态管理**: Pinia
 - **路由**: Vue Router 4
 - **UI 组件库**: Element Plus
-- **样式**: 内联样式 + CSS 变量
-- **字体**: Geom (Logo) + PingFang SC (正文)
-- **Markdown**: markdown-it + highlight.js
+- **字体**: Geom + PingFang SC 
+- **Markdown**: Markdown-it + Highlight.js
 
 ### 后端
 - **框架**: NestJS
@@ -54,11 +53,11 @@
 ### 工具
 - Web 搜索 (Tavily API)
 
-### UI/UX
-- 深色模式
-- 导出对话 (Markdown)
-- 响应式布局
+### 其他
 - 对话分享 (公开链接)
+- 导出对话 (Markdown)
+- 深色模式
+- 响应式布局
 
 
 ## 开发
@@ -138,24 +137,60 @@ Rui-Chat/
 ├── client/                    # Vue 3 前端
 │   ├── src/
 │   │   ├── components/        # UI 组件
+│   │   │   ├── auth/          # 登录/注册对话框
+│   │   │   ├── chat/          # 聊天相关组件
+│   │   │   ├── conversation/  # 会话列表/搜索
+│   │   │   ├── landing/       # 首页引导
+│   │   │   ├── layout/        # 布局组件 (Header/Sidebar)
+│   │   │   ├── share/         # 分享功能
+│   │   │   └── voice/         # 语音相关
 │   │   ├── views/             # 页面
 │   │   ├── stores/            # Pinia 状态管理
 │   │   ├── services/          # API 调用
 │   │   ├── utils/             # 工具函数
 │   │   ├── types/             # TypeScript 类型
-│   │   └── constants/         # 常量定义
-│   └── ...
+│   │   ├── constants/         # 常量定义
+│   │   ├── styles/            # 全局样式
+│   │   └── router/            # 路由配置
+│   └── public/                # 静态资源
 ├── server/                    # NestJS 后端
 │   ├── src/
-│   │   ├── auth/              # 认证模块
-│   │   ├── chat/              # 聊天核心
-│   │   ├── voice/             # 语音模块
-│   │   ├── tools/             # 工具调用
-│   │   └── ...
+│   │   ├── auth/              # 认证模块 (JWT/OAuth)
+│   │   ├── chat/              # 聊天核心 (SSE/AI)
+│   │   ├── conversation/      # 会话管理
+│   │   ├── message/           # 消息管理
+│   │   ├── voice/             # 语音模块 (ASR/TTS)
+│   │   ├── tools/             # 工具调用 (Web搜索)
+│   │   ├── upload/            # 文件上传
+│   │   ├── export/            # 导出功能
+│   │   ├── share/             # 分享功能
+│   │   ├── user/              # 用户管理
+│   │   ├── prisma/            # 数据库服务
+│   │   └── common/            # 公共模块 (守卫/装饰器)
 │   └── prisma/                # 数据库模型
 └── .env.local                 # 环境变量
 ```
 
 ## License
 
-MIT
+MIT License
+
+Copyright (c) 2024 Rui Yier
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
