@@ -13,6 +13,7 @@ export interface ChatCompletionOptions {
   temperature?: number
   max_tokens?: number
   tools?: any[]
+  enableThinking?: boolean
   audio?: { format: string; voice?: string; [key: string]: any }
   asr_options?: { language?: string }
 }
@@ -39,6 +40,7 @@ export class AiService {
     if (options.temperature !== undefined) body.temperature = options.temperature
     if (options.max_tokens !== undefined) body.max_tokens = options.max_tokens
     if (options.tools && options.tools.length > 0) body.tools = options.tools
+    if (options.enableThinking !== undefined) body.enable_thinking = options.enableThinking
     if (options.audio) body.audio = options.audio
     if (options.asr_options) body.asr_options = options.asr_options
 

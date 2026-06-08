@@ -30,6 +30,7 @@ export async function handleStream(
     stream: true,
     temperature: temperature ?? 0.7,
     max_tokens: maxTokens ?? 8192,
+    enableThinking,
   }
 
   // Add tools if available
