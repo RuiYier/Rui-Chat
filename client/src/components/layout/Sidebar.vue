@@ -31,11 +31,28 @@ const convStore = useConversationStore()
     <!-- Logo -->
     <div style="padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div v-if="!collapsed" style="display:flex;align-items:center;gap:10px">
+        <div v-if="!collapsed" style="display:flex;align-items:center;gap:8px">
           <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M2.30047 8.77631L12.0474 23H16.3799L6.63183 8.77631H2.30047ZM6.6285 16.6762L2.29492 23H6.63072L8.79584 19.8387L6.6285 16.6762ZM17.3709 1L9.88007 11.9308L12.0474 15.0944L21.7067 1H17.3709ZM18.1555 7.76374V23H21.7067V2.5818L18.1555 7.76374Z" fill="#1a1a1a" />
           </svg>
-          <span style="font-size:20px;font-weight:700;color:#1a1a1a">Rui Chat</span>
+          <svg width="88" height="20" viewBox="0 0 88 20" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#1a1a1a"/>
+                <stop offset="100%" style="stop-color:#333333"/>
+              </linearGradient>
+            </defs>
+            <!-- Rui -->
+            <path d="M1 16V4h4.5c2.5 0 4 1.5 4 3.5S8 11 5.5 11H3.5v5H1zm2.5-7h2c1.1 0 1.8-.7 1.8-1.8S6.6 5.5 5.5 5.5H3.5v3.5z" fill="url(#logoGrad)"/>
+            <path d="M10 16V4h2v12h-2z" fill="url(#logoGrad)"/>
+            <path d="M15 16V4h2v10.5h5V16H15z" fill="url(#logoGrad)"/>
+            <!-- Chat -->
+            <path d="M28 16V4h2v10.5h5V16H28z" fill="url(#logoGrad)"/>
+            <path d="M36 16V4h4.5c2.5 0 4 1.5 4 3.5S43 11 40.5 11H38.5v5H36zm2.5-7h2c1.1 0 1.8-.7 1.8-1.8S41.6 5.5 40.5 5.5H38.5v3.5z" fill="url(#logoGrad)"/>
+            <path d="M47 16l6-12h2l-6 12h-2z" fill="url(#logoGrad)"/>
+            <path d="M58 16V4h2v12h-2z" fill="url(#logoGrad)"/>
+            <path d="M63 16V4h2v10.5h5V16H63z" fill="url(#logoGrad)"/>
+          </svg>
         </div>
         <button
           :style="{
