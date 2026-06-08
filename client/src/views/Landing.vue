@@ -9,6 +9,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 const showLogin = ref(false)
 const inputValue = ref('')
+const landingInputRef = ref<HTMLInputElement | null>(null)
+const inputWrapperRef = ref<HTMLElement | null>(null)
 
 if (authStore.isAuthenticated) {
   router.replace('/chat')
@@ -141,8 +143,15 @@ function handleSend() {
 
         <!-- Input Section -->
         <div :style="{ maxWidth: '42rem', margin: '0 auto' }">
-          <div :style="{ position: 'relative' }">
+          <div
+            ref="inputWrapperRef"
+            :style="{ position: 'relative', borderRadius: '16px', border: '2px solid var(--border)', background: 'var(--background)', transition: 'border-color 0.2s' }"
+            @click="landingInputRef?.focus()"
+            @focusin="($event.currentTarget as HTMLElement).style.borderColor = 'var(--ring)'"
+            @focusout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--border)'"
+          >
             <input
+              ref="landingInputRef"
               v-model="inputValue"
               type="text"
               placeholder="输入消息开始对话..."
@@ -150,15 +159,11 @@ function handleSend() {
                 width: '100%',
                 padding: '16px 56px 16px 24px',
                 fontSize: '1rem',
-                borderRadius: '16px',
-                border: '2px solid var(--border)',
-                background: 'var(--background)',
-                color: 'var(--text-primary)',
+                background: 'transparent',
+                border: 'none',
                 outline: 'none',
-                transition: 'border-color 0.2s',
+                color: 'var(--text-primary)',
               }"
-              @focus="($event.target as HTMLElement).style.borderColor = 'var(--ring)'"
-              @blur="($event.target as HTMLElement).style.borderColor = 'var(--border)'"
               @keydown.enter="handleSend"
             />
             <button
