@@ -6,6 +6,7 @@ import { ChatService } from '@/services/chat.service'
 import { createMessageState, appendThinking, appendAnswer, transitionPhase } from '@/utils/message-state'
 import { DEFAULT_MODEL } from '@/constants/models'
 import { DEFAULT_VOICE } from '@/constants/voices'
+import { ElMessage } from 'element-plus'
 
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<Message[]>([])
@@ -32,7 +33,16 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function sendMessage(content: string, attachments?: any[]) {
-    if (streaming.value || !content.trim()) return
+    if (streaming.value) return
+    if (!content.trim() && (!attachments || attachments.length === 0)) return
+
+    // Check if image attachments exist and auto-switch model
+    const hasImages = attachments?.some(a => a.type === 'image')
+    let useModel = config.value.model
+    if (hasImages && config.value.model === 'mimo-v2.5-pro') {
+      useModel = 'mimo-v2.5'
+      ElMessage.info('图片消息自动切换至 MiMo-V2.5 模型')
+    }
 
     // Add user message
     const userMsg: Message = {
@@ -68,7 +78,7 @@ export const useChatStore = defineStore('chat', () => {
     try {
       await ChatService.sendMessage(
         content,
-        config.value,
+        { ...config.value, model: useModel },
         currentConversationId.value || undefined,
         attachments,
         {
