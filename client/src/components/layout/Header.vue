@@ -126,7 +126,7 @@ onUnmounted(() => document.removeEventListener('click', closeMenus))
         </div>
         <!-- User dropdown -->
         <Transition name="dropdown">
-          <div v-if="showUserMenu" :style="{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', zIndex: 100, width: '220px', borderRadius: '12px', padding: '4px', background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }" @click.stop>
+          <div v-if="showUserMenu" :style="{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', zIndex: 100, width: '220px', borderRadius: '12px', padding: '4px', background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', transformOrigin: 'top right' }" @click.stop>
           <!-- User info -->
           <div :style="{ padding: '10px 12px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }">
             <div :style="{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }">{{ authStore.user.name || authStore.user.username }}</div>
@@ -142,19 +142,17 @@ onUnmounted(() => document.removeEventListener('click', closeMenus))
             <el-icon :size="14"><SwitchButton /></el-icon>
             <span>退出登录</span>
           </div>
+        </div>
         </Transition>
       </div>
     </div>
 
     <!-- About dialog -->
     <Teleport to="body">
-      <template v-if="showAboutDialog">
-        <Transition name="backdrop">
-          <div :style="{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)' }" @click="showAboutDialog = false" />
-        </Transition>
-        <Transition name="dialog">
-          <div :style="{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-            <div :style="{ width: '420px', borderRadius: '16px', padding: '24px', background: 'var(--background)', border: '1px solid var(--border)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }" @click.stop>
+      <Transition name="fade">
+        <div v-if="showAboutDialog" :style="{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }" @click="showAboutDialog = false">
+          <Transition name="scale" appear>
+            <div v-if="showAboutDialog" :style="{ width: '420px', borderRadius: '16px', padding: '24px', background: 'var(--background)', border: '1px solid var(--border)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }" @click.stop>
               <h2 :style="{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }">关于 Rui Chat</h2>
               <p :style="{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }">一个基于小米 MiMo 大模型的智能对话应用</p>
               <div :style="{ marginBottom: '16px' }">
@@ -175,11 +173,50 @@ onUnmounted(() => document.removeEventListener('click', closeMenus))
                 <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">技术栈</h4>
                 <p :style="{ fontSize: '13px', color: 'var(--text-secondary)' }">Vue 3 • NestJS • TypeScript • Prisma • PostgreSQL</p>
               </div>
-              <button :style="{ marginTop: '20px', width: '100%', padding: '10px', borderRadius: '12px', fontSize: '14px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }" @click="showAboutDialog = false">关闭</button>
+              <button class="about-close-btn" :style="{ marginTop: '20px', width: '100%', padding: '10px', borderRadius: '12px', fontSize: '14px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)', transition: 'all 0.2s' }" @click="showAboutDialog = false">关闭</button>
             </div>
-          </div>
-        </Transition>
-      </template>
+          </Transition>
+        </div>
+      </Transition>
     </Teleport>
   </header>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.2s ease;
+}
+.scale-enter-from,
+.scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.about-close-btn:hover {
+  background: var(--input-bg) !important;
+  border-color: var(--ring) !important;
+}
+.about-close-btn:active {
+  transform: scale(0.98);
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: all 0.15s ease;
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-4px);
+}
+</style>
