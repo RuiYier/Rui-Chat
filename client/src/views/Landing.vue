@@ -54,6 +54,7 @@ function handleSend() {
               marginBottom: '24px',
               fontFamily: 'Geom, sans-serif',
               cursor: 'default',
+              userSelect: 'none',
             }"
           >
             Rui Chat
@@ -66,6 +67,7 @@ function handleSend() {
               lineHeight: '1.75',
               color: 'var(--text-secondary)',
               cursor: 'default',
+              userSelect: 'none',
             }"
           >
             新一代 AI 对话助手，让智能对话变得简单而优雅
@@ -96,6 +98,7 @@ function handleSend() {
               border: '1px solid var(--border)',
               background: 'var(--background)',
               cursor: 'default',
+              userSelect: 'none',
               transition: 'box-shadow 0.2s, border-color 0.2s',
             }"
           >
@@ -190,6 +193,7 @@ function handleSend() {
               marginTop: '24px',
               color: 'var(--text-tertiary)',
               cursor: 'default',
+              userSelect: 'none',
             }"
           >
             点击发送后，您需要登录或注册账号
