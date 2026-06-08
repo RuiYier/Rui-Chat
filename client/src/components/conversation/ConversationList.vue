@@ -62,7 +62,8 @@ onUnmounted(() => document.removeEventListener('click', closeMenu))
             <el-icon :size="14"><MoreFilled /></el-icon>
           </button>
           <!-- Custom dropdown menu -->
-          <div v-if="openMenuId === conv.id" :style="{ position: 'absolute', top: '100%', right: '-8px', marginTop: '4px', zIndex: 100, minWidth: '140px', borderRadius: '12px', padding: '4px', background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }" @click.stop>
+          <Transition name="dropdown">
+            <div v-if="openMenuId === conv.id" :style="{ position: 'absolute', top: '100%', right: '-8px', marginTop: '4px', zIndex: 100, minWidth: '140px', borderRadius: '12px', padding: '4px', background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }" @click.stop>
             <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', color: 'var(--text-primary)' }" @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-hover)'" @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'" @click="handleShare(conv)">
               <el-icon :size="14"><Share /></el-icon>
               <span>{{ conv.isShared ? '取消分享' : '分享' }}</span>
@@ -80,6 +81,7 @@ onUnmounted(() => document.removeEventListener('click', closeMenu))
               <span>删除</span>
             </div>
           </div>
+          </Transition>
         </div>
       </div>
     </div>
