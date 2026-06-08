@@ -12,7 +12,10 @@ export interface Message {
 
 export interface FileAttachment {
   name: string
-  content: string
+  content?: string    // text content for .txt/.md
+  data?: string       // base64 data for images
+  type?: 'text' | 'image'
+  mimeType?: string
   size: number
 }
 

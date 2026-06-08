@@ -13,7 +13,11 @@ const attachments = ref<any[]>([])
 const isRecording = ref(false)
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const showVoiceMenu = ref(false)
-const canSend = computed(() => inputText.value.trim().length > 0 && !chatStore.streaming)
+const inputRef = ref<HTMLInputElement | null>(null)
+const canSend = computed(() => (inputText.value.trim().length > 0 || attachments.value.length > 0) && !chatStore.streaming)
+
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+const isImageFile = (file: File) => IMAGE_TYPES.includes(file.type)
 
 function handleSend() {
   if (!canSend.value) return
@@ -33,11 +37,44 @@ function handleFileSelect(e: Event) {
 }
 
 async function processFile(file: File) {
+  if (isImageFile(file)) {
+    processImage(file)
+    return
+  }
   try {
     const r = await UploadService.uploadFile(file)
     attachments.value.push(r)
     ElMessage.success(`已添加: ${r.name}`)
   } catch (err: any) { ElMessage.error(err.response?.data?.message || '上传失败') }
+}
+
+function processImage(file: File) {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const data = e.target?.result as string
+    attachments.value.push({
+      name: file.name,
+      data,
+      type: 'image',
+      mimeType: file.type,
+      size: file.size,
+    })
+    ElMessage.success(`已添加: ${file.name}`)
+  }
+  reader.onerror = () => ElMessage.error('图片读取失败')
+  reader.readAsDataURL(file)
+}
+
+function handlePaste(e: ClipboardEvent) {
+  const items = e.clipboardData?.items
+  if (!items) return
+  for (const item of Array.from(items)) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
+      if (file) processImage(file)
+    }
+  }
 }
 
 function removeAttachment(i: number) { attachments.value.splice(i, 1) }
@@ -76,7 +113,9 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
     <div :style="{ maxWidth: '896px', margin: '0 auto', padding: '16px 24px' }">
       <!-- File chips -->
       <div v-if="attachments.length > 0" :style="{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }">
-        <div v-for="(att, i) in attachments" :key="i" :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', background: att.name.endsWith('.md') ? '#FFF7ED' : '#EFF6FF', border: att.name.endsWith('.md') ? '1px solid #FDBA74' : '1px solid #93C5FD', color: att.name.endsWith('.md') ? '#C2410C' : '#1D4ED8' }">
+        <div v-for="(att, i) in attachments" :key="i" :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', background: att.type === 'image' ? '#F0FDF4' : att.name.endsWith('.md') ? '#FFF7ED' : '#EFF6FF', border: att.type === 'image' ? '1px solid #86EFAC' : att.name.endsWith('.md') ? '1px solid #FDBA74' : '1px solid #93C5FD', color: att.type === 'image' ? '#166534' : att.name.endsWith('.md') ? '#C2410C' : '#1D4ED8' }">
+          <img v-if="att.type === 'image' && att.data" :src="att.data" :style="{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover' }" />
+          <el-icon v-if="att.type === 'image'" :size="14"><Picture /></el-icon>
           <span>{{ att.name }}</span>
           <button style="background:none;border:none;cursor:pointer;opacity:0.7" @click="removeAttachment(i)"><el-icon :size="12"><Close /></el-icon></button>
         </div>
@@ -99,21 +138,25 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
 
       <!-- Input card -->
       <div :style="{ borderRadius: '24px', background: 'var(--background)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', transition: 'box-shadow 0.2s' }">
-        <!-- Text -->
-        <input
-          v-model="inputText"
-          :placeholder="isRecording ? '正在录音...' : '输入消息...'"
-          :style="{ width: '100%', height: '48px', padding: '12px 24px', fontSize: '15px', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', borderRadius: '24px 24px 0 0' }"
-          :disabled="isRecording"
-          @keydown="handleKeydown"
-        />
+        <!-- Text wrapper -->
+        <div :style="{ padding: '12px 24px' }">
+          <input
+            ref="inputRef"
+            v-model="inputText"
+            :placeholder="isRecording ? '正在录音...' : '输入消息...'"
+            :style="{ width: '100%', height: '48px', padding: 0, fontSize: '15px', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)' }"
+            :disabled="isRecording"
+            @keydown="handleKeydown"
+            @paste="handlePaste"
+          />
+        </div>
 
         <!-- Toolbar -->
         <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px 12px' }">
           <div :style="{ display: 'flex', alignItems: 'center', gap: '4px' }">
             <!-- File -->
             <label :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-tertiary)' }">
-              <input type="file" style="display:none" accept=".txt,.md" multiple @change="handleFileSelect" />
+              <input type="file" style="display:none" accept=".txt,.md,.png,.jpg,.jpeg,.gif,.webp" multiple @change="handleFileSelect" />
               <el-icon :size="18"><Paperclip /></el-icon>
             </label>
 

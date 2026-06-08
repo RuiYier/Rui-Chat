@@ -2,7 +2,7 @@ export interface PromptContext {
   hasWebSearch?: boolean
   hasImageUnderstanding?: boolean
   hasAudioUnderstanding?: boolean
-  attachments?: Array<{ name: string; content: string }>
+  attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>
 }
 
 export function buildSystemPrompt(context: PromptContext = {}): string {
@@ -29,10 +29,13 @@ export function buildSystemPrompt(context: PromptContext = {}): string {
 - 保持回复简洁、准确、有帮助`
 
   if (context.attachments && context.attachments.length > 0) {
-    prompt += `
+    const textAttachments = context.attachments.filter(a => a.type !== 'image' && a.content)
+    if (textAttachments.length > 0) {
+      prompt += `
 
 ## 用户上传的文件
-${context.attachments.map(a => `### ${a.name}\n${a.content}`).join('\n\n')}`
+${textAttachments.map(a => `### ${a.name}\n${a.content}`).join('\n\n')}`
+    }
   }
 
   return prompt
@@ -41,11 +44,11 @@ ${context.attachments.map(a => `### ${a.name}\n${a.content}`).join('\n\n')}`
 export function buildContextMessages(
   history: Array<{ role: string; content: string; thinking?: string | null }>,
   currentUserMessage: any,
-  attachments?: Array<{ name: string; content: string }>,
+  attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>,
 ): any[] {
   const messages: any[] = []
 
-  // Add system prompt
+  // Add system prompt (text attachments only)
   messages.push({
     role: 'system',
     content: buildSystemPrompt({ hasWebSearch: true, attachments }),
@@ -60,8 +63,22 @@ export function buildContextMessages(
     })
   }
 
-  // Add current user message
-  messages.push(currentUserMessage)
+  // Build current user message with multimodal content if images exist
+  const imageAttachments = attachments?.filter(a => a.type === 'image' && a.data) || []
+  if (imageAttachments.length > 0) {
+    const content: any[] = [
+      { type: 'text', text: currentUserMessage.content },
+    ]
+    for (const img of imageAttachments) {
+      content.push({
+        type: 'image_url',
+        image_url: { url: img.data },
+      })
+    }
+    messages.push({ role: 'user', content })
+  } else {
+    messages.push(currentUserMessage)
+  }
 
   return messages
 }
