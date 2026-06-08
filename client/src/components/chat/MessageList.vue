@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import { useAuthStore } from '@/stores/auth'
 import ChatMessage from './ChatMessage.vue'
 
 const chatStore = useChatStore()
+const authStore = useAuthStore()
 const scrollRef = ref<HTMLElement>()
 const userScrolledUp = ref(false)
+
+const userName = computed(() => authStore.user?.name || authStore.user?.username || '')
 
 function scrollToBottom(smooth = true) {
   nextTick(() => {
@@ -33,7 +37,7 @@ watch(() => chatStore.messages[chatStore.messages.length - 1]?.content, () => { 
   >
     <!-- Empty -->
     <div v-if="chatStore.messages.length === 0" :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px', cursor: 'default', userSelect: 'none' }">
-      <p :style="{ fontSize: '32px', fontWeight: 400, color: 'var(--text-primary)' }">我能帮你什么？</p>
+      <p :style="{ fontSize: '32px', fontWeight: 400, color: 'var(--text-primary)' }">{{ userName ? `${userName}，` : '' }}我能帮你什么？</p>
     </div>
 
     <!-- Messages -->
