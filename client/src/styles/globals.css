@@ -1,23 +1,64 @@
 @import 'tailwindcss';
 
-/* Light Theme - Sky-Chat exact */
+/* Geom Font - for logo */
+@font-face {
+  font-family: 'Geom';
+  src: url('https://raw.githubusercontent.com/ThanosPoulakidas/Geom/main/fonts/webfonts/Geom-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Geom';
+  src: url('https://raw.githubusercontent.com/ThanosPoulakidas/Geom/main/fonts/webfonts/Geom-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Geom';
+  src: url('https://raw.githubusercontent.com/ThanosPoulakidas/Geom/main/fonts/webfonts/Geom-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* PingFang Font - for body text */
+@font-face {
+  font-family: 'PingFang SC';
+  src: url('https://raw.githubusercontent.com/ZWolken/PingFang/main/PingFangSC-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PingFang SC';
+  src: url('https://raw.githubusercontent.com/ZWolken/PingFang/main/PingFangSC-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PingFang SC';
+  src: url('https://raw.githubusercontent.com/ZWolken/PingFang/main/PingFangSC-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'PingFang SC';
+  src: url('https://raw.githubusercontent.com/ZWolken/PingFang/main/PingFangSC-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* Light Theme */
 :root {
   --background: #FFFFFF;
-  --foreground: #0D0D0D;
   --sidebar-bg: #FBFBFB;
   --sidebar-hover: #F2F2F2;
   --sidebar-active: #EBEBEB;
   --input-bg: #F4F4F4;
   --input-hover: #EFEFEF;
-  --input-border: #E0E0E0;
   --message-user-bg: #F9F9F9;
-  --message-ai-bg: #FFFFFF;
   --text-primary: #0D0D0D;
   --text-secondary: #666666;
   --text-tertiary: #999999;
   --button-primary-bg: #121212;
-  --button-primary-hover: #1A1A1A;
-  --button-secondary-bg: #F4F4F4;
   --accent-thinking: #2D9D78;
   --accent-green: #10B981;
   --accent-red: #EF4444;
@@ -25,24 +66,19 @@
   --ring: #3B82F6;
 }
 
-/* Dark Theme - VSCode Dark+ inspired */
+/* Dark Theme */
 html.dark {
   --background: #1e1e1e;
-  --foreground: #d4d4d4;
   --sidebar-bg: #252526;
   --sidebar-hover: #2d2d30;
   --sidebar-active: #3c3c3c;
   --input-bg: #3c3c3c;
   --input-hover: #444444;
-  --input-border: #555555;
   --message-user-bg: #2d2d30;
-  --message-ai-bg: #1e1e1e;
   --text-primary: #d4d4d4;
   --text-secondary: #999999;
   --text-tertiary: #666666;
   --button-primary-bg: #007acc;
-  --button-primary-hover: #1a8ad4;
-  --button-secondary-bg: #3c3c3c;
   --accent-thinking: #2D9D78;
   --accent-green: #10B981;
   --accent-red: #EF4444;
@@ -59,7 +95,7 @@ html.dark {
 html, body, #app {
   height: 100%;
   width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   background-color: var(--background);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -125,12 +161,18 @@ html, body, #app {
   background: var(--input-bg);
   border: none;
   border-radius: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem;
   overflow-x: auto;
   margin: 1rem 0;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
   font-size: 13px;
   line-height: 1.6;
+}
+.prose-container code pre {
+  background: var(--background);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
 }
 .prose-container code {
   font-size: 0.9em;
@@ -192,8 +234,6 @@ html, body, #app {
   padding: 12px 20px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
-
-/* Element Plus Dropdown - removed, using custom dropdown */
 
 /* Element Plus MessageBox - consistent border-radius */
 .el-message-box {

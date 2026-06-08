@@ -31,11 +31,11 @@ const convStore = useConversationStore()
     <!-- Logo -->
     <div style="padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div v-if="!collapsed" style="display:flex;align-items:center;gap:10px">
-          <svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2.30047 8.77631L12.0474 23H16.3799L6.63183 8.77631H2.30047ZM6.6285 16.6762L2.29492 23H6.63072L8.79584 19.8387L6.6285 16.6762ZM17.3709 1L9.88007 11.9308L12.0474 15.0944L21.7067 1H17.3709ZM18.1555 7.76374V23H21.7067V2.5818L18.1555 7.76374Z" fill="#1a1a1a" />
+        <div v-if="!collapsed" style="display:flex;align-items:center;gap:10px;cursor:default">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="#1a1a1a" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.37 0 0 5.37 0 12C0 18.09 4.53 23.11 10.4 23.9V21.5A1.59 1.59 0 0 0 9.32 19.97A8.41 8.41 0 0 1 3.6 11.8A8.37 8.37 0 0 1 12.09 3.6A8.4 8.4 0 0 1 20.4 12.31L20.39 12.38A8.68 8.68 0 0 1 20.36 12.76C20.36 12.83 20.35 12.9 20.34 12.96C20.34 13.04 20.33 13.12 20.32 13.19L20.3 13.29C19.27 20.07 10.45 23.87 10.4 23.9C10.92 23.97 11.46 24 12 24C18.63 24 24 18.63 24 12S18.63 0 12 0Z"/>
           </svg>
-          <span style="font-size:20px;font-weight:700;color:#1a1a1a">Rui Chat</span>
+          <span style="font-size:20px;font-weight:700;color:#1a1a1a;font-family:'Geom',sans-serif;cursor:default">Rui Chat</span>
         </div>
         <button
           :style="{
