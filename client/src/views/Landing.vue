@@ -10,7 +10,6 @@ const authStore = useAuthStore()
 const showLogin = ref(false)
 const inputValue = ref('')
 const landingInputRef = ref<HTMLInputElement | null>(null)
-const inputWrapperRef = ref<HTMLElement | null>(null)
 
 if (authStore.isAuthenticated) {
   router.replace('/chat')
@@ -144,7 +143,6 @@ function handleSend() {
         <!-- Input Section -->
         <div :style="{ maxWidth: '42rem', margin: '0 auto' }">
           <div
-            ref="inputWrapperRef"
             :style="{ position: 'relative', borderRadius: '16px', border: '2px solid var(--border)', background: 'var(--background)', transition: 'border-color 0.2s', cursor: 'text' }"
             @focusin="($event.currentTarget as HTMLElement).style.borderColor = 'var(--ring)'"
             @focusout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--border)'"

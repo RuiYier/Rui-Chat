@@ -161,40 +161,12 @@ export async function handleStream(
     await persister.updateMessageContent(assistantMessageId, fullContent)
   }
 
-  // Auto-generate title using AI for first message only
-  const convId = (await (persister as any).prisma.message.findUnique({ where: { id: assistantMessageId } }))?.conversationId
-  console.log('[TitleGen] convId:', convId, 'fullContent length:', fullContent?.length)
-  if (convId) {
-    const history = await persister.getMessageHistory(convId, 10)
-    console.log('[TitleGen] history length:', history.length)
-    if (history.length <= 2 && fullContent) {
-      try {
-        const userMsg = messages[messages.length - 1]?.content || ''
-        const userText = typeof userMsg === 'string' ? userMsg : (Array.isArray(userMsg) ? userMsg.find((b: any) => b.type === 'text')?.text || '' : '')
-        console.log('[TitleGen] userText:', userText.slice(0, 50))
-        const titleResponse = await aiService.chatCompletion({
-          model: 'mimo-v2.5',
-          messages: [
-            { role: 'system', content: '你是一个对话标题生成器。根据用户的问题和AI的回答，生成一个简短的标题（15字以内）。只输出标题，不要任何其他内容。' },
-            { role: 'user', content: `用户问题：${userText}\nAI回答：${fullContent.slice(0, 200)}` },
-          ],
-          stream: false,
-          max_tokens: 50,
-        })
-        console.log('[TitleGen] titleResponse status:', titleResponse.status)
-        if (titleResponse.ok) {
-          const titleData = await titleResponse.json()
-          const title = titleData.choices?.[0]?.message?.content?.trim()
-          console.log('[TitleGen] generated title:', title)
-          if (title) {
-            await persister.updateConversationTitle(convId, title)
-            console.log('[TitleGen] title updated successfully')
-          }
-        }
-      } catch {
-        // Fallback: use first 50 chars of response
-        await persister.updateConversationTitle(convId, fullContent.slice(0, 50).replace(/\n/g, ' '))
-      }
+  // Auto-generate title from first message
+  if (options.conversationId && fullContent) {
+    const history = await persister.getMessageHistory(options.conversationId, 2)
+    if (history.length <= 2) {
+      const title = fullContent.slice(0, 50).replace(/\n/g, ' ')
+      await persister.updateConversationTitle(options.conversationId, title)
     }
   }
 
