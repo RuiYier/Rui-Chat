@@ -52,6 +52,8 @@ function handleSend() {
               letterSpacing: '-0.025em',
               color: 'var(--text-primary)',
               marginBottom: '24px',
+              fontFamily: 'Geom, sans-serif',
+              cursor: 'default',
             }"
           >
             Rui Chat
@@ -63,6 +65,7 @@ function handleSend() {
               margin: '0 auto',
               lineHeight: '1.75',
               color: 'var(--text-secondary)',
+              cursor: 'default',
             }"
           >
             新一代 AI 对话助手，让智能对话变得简单而优雅
@@ -88,7 +91,7 @@ function handleSend() {
             :key="feature.title"
             class="feature-card"
             :style="{
-              padding: '24px',
+              padding: '16px',
               borderRadius: '12px',
               border: '1px solid var(--border)',
               background: 'var(--background)',
@@ -98,24 +101,25 @@ function handleSend() {
           >
             <div
               :style="{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '16px',
+                marginBottom: '12px',
                 background: 'var(--input-bg)',
               }"
             >
-              <el-icon :size="24" :style="{ color: 'var(--text-secondary)' }">
+              <el-icon :size="18" :style="{ color: 'var(--text-secondary)' }">
                 <component :is="feature.icon" />
               </el-icon>
             </div>
             <h3
               :style="{
                 fontWeight: '600',
-                marginBottom: '8px',
+                fontSize: '14px',
+                marginBottom: '4px',
                 color: 'var(--text-primary)',
               }"
             >
@@ -123,7 +127,7 @@ function handleSend() {
             </h3>
             <p
               :style="{
-                fontSize: '0.875rem',
+                fontSize: '12px',
                 color: 'var(--text-secondary)',
               }"
             >
@@ -185,6 +189,7 @@ function handleSend() {
               fontSize: '0.875rem',
               marginTop: '24px',
               color: 'var(--text-tertiary)',
+              cursor: 'default',
             }"
           >
             点击发送后，您需要登录或注册账号
