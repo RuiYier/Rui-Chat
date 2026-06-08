@@ -2,7 +2,7 @@
 
 基于小米 MiMo 大模型的智能对话助手，使用 Vue 3 + NestJS 架构。支持语音输入、语音合成、图片识别 、深度思考过程、对话分享导出等。
 
-![Chat interface](/docs/Chat interface.jpg)
+![Chat interface](docs/chat-interface.jpg)
 
 ## 技术栈
 
