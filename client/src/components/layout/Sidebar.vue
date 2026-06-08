@@ -31,7 +31,7 @@ const convStore = useConversationStore()
     <!-- Logo -->
     <div style="padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <span v-if="!collapsed" style="font-size:18px;font-weight:600;background:linear-gradient(to right,#60A5FA,#2563EB);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
+        <span v-if="!collapsed" style="font-size:22px;font-weight:700;color:#1a1a1a">
           Rui Chat
         </span>
         <button

@@ -193,17 +193,7 @@ html, body, #app {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Element Plus Dropdown - consistent border-radius */
-.el-dropdown-menu {
-  border-radius: 12px !important;
-  padding: 4px !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-}
-.el-dropdown-menu__item {
-  border-radius: 8px !important;
-  padding: 8px 12px !important;
-}
+/* Element Plus Dropdown - removed, using custom dropdown */
 
 /* Element Plus MessageBox - consistent border-radius */
 .el-message-box {
