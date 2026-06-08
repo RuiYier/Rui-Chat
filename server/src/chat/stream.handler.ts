@@ -161,16 +161,34 @@ export async function handleStream(
     await persister.updateMessageContent(assistantMessageId, fullContent)
   }
 
-  // Auto-generate title from first message
-  const history = await persister.getMessageHistory(
-    (await (persister as any).prisma.message.findUnique({ where: { id: assistantMessageId } }))?.conversationId || '',
-    2,
-  )
-  if (history.length <= 2 && fullContent) {
-    const title = fullContent.slice(0, 50).replace(/\n/g, ' ')
-    const convId = (await (persister as any).prisma.message.findUnique({ where: { id: assistantMessageId } }))?.conversationId
-    if (convId) {
-      await persister.updateConversationTitle(convId, title)
+  // Auto-generate title using AI for first message only
+  const convId = (await (persister as any).prisma.message.findUnique({ where: { id: assistantMessageId } }))?.conversationId
+  if (convId) {
+    const history = await persister.getMessageHistory(convId, 2)
+    if (history.length <= 2 && fullContent) {
+      try {
+        const userMsg = messages[messages.length - 1]?.content || ''
+        const userText = typeof userMsg === 'string' ? userMsg : userMsg.find((b: any) => b.type === 'text')?.text || ''
+        const titleResponse = await aiService.chatCompletion({
+          model: 'mimo-v2.5',
+          messages: [
+            { role: 'system', content: '你是一个对话标题生成器。根据用户的问题和AI的回答，生成一个简短的标题（15字以内）。只输出标题，不要任何其他内容。' },
+            { role: 'user', content: `用户问题：${userText}\nAI回答：${fullContent.slice(0, 200)}` },
+          ],
+          stream: false,
+          max_tokens: 50,
+        })
+        if (titleResponse.ok) {
+          const titleData = await titleResponse.json()
+          const title = titleData.choices?.[0]?.message?.content?.trim()
+          if (title) {
+            await persister.updateConversationTitle(convId, title)
+          }
+        }
+      } catch {
+        // Fallback: use first 50 chars of response
+        await persister.updateConversationTitle(convId, fullContent.slice(0, 50).replace(/\n/g, ' '))
+      }
     }
   }
 
