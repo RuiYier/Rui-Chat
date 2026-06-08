@@ -148,36 +148,38 @@ onUnmounted(() => document.removeEventListener('click', closeMenus))
 
     <!-- About dialog -->
     <Teleport to="body">
-      <Transition name="backdrop">
-        <div v-if="showAboutDialog" :style="{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)' }" @click="showAboutDialog = false" />
-      </Transition>
-      <Transition name="dialog">
-        <div v-if="showAboutDialog" :style="{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }">
-          <div :style="{ width: '420px', borderRadius: '16px', padding: '24px', background: 'var(--background)', border: '1px solid var(--border)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }" @click.stop>
-            <h2 :style="{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }">关于 Rui Chat</h2>
-            <p :style="{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }">一个基于小米 MiMo 大模型的智能对话应用</p>
-            <div :style="{ marginBottom: '16px' }">
-              <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">版本信息</h4>
-              <p :style="{ fontSize: '13px', color: 'var(--text-secondary)' }">版本: 1.0.0</p>
+      <template v-if="showAboutDialog">
+        <Transition name="backdrop">
+          <div :style="{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)' }" @click="showAboutDialog = false" />
+        </Transition>
+        <Transition name="dialog">
+          <div :style="{ position: 'fixed', inset: 0, zIndex: 1001, display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+            <div :style="{ width: '420px', borderRadius: '16px', padding: '24px', background: 'var(--background)', border: '1px solid var(--border)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }" @click.stop>
+              <h2 :style="{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }">关于 Rui Chat</h2>
+              <p :style="{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px' }">一个基于小米 MiMo 大模型的智能对话应用</p>
+              <div :style="{ marginBottom: '16px' }">
+                <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">版本信息</h4>
+                <p :style="{ fontSize: '13px', color: 'var(--text-secondary)' }">版本: 1.0.0</p>
+              </div>
+              <div :style="{ marginBottom: '16px' }">
+                <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">功能特性</h4>
+                <ul :style="{ fontSize: '13px', color: 'var(--text-secondary)', listStyle: 'none', padding: 0, margin: 0 }">
+                  <li :style="{ marginBottom: '4px' }">• 支持 MiMo 大模型对话</li>
+                  <li :style="{ marginBottom: '4px' }">• 深度思考模式</li>
+                  <li :style="{ marginBottom: '4px' }">• 语音输入与合成</li>
+                  <li :style="{ marginBottom: '4px' }">• 会话分享与导出</li>
+                  <li :style="{ marginBottom: '4px' }">• OAuth 登录（GitHub/Google）</li>
+                </ul>
+              </div>
+              <div>
+                <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">技术栈</h4>
+                <p :style="{ fontSize: '13px', color: 'var(--text-secondary)' }">Vue 3 • NestJS • TypeScript • Prisma • PostgreSQL</p>
+              </div>
+              <button :style="{ marginTop: '20px', width: '100%', padding: '10px', borderRadius: '12px', fontSize: '14px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }" @click="showAboutDialog = false">关闭</button>
             </div>
-            <div :style="{ marginBottom: '16px' }">
-              <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">功能特性</h4>
-              <ul :style="{ fontSize: '13px', color: 'var(--text-secondary)', listStyle: 'none', padding: 0, margin: 0 }">
-                <li :style="{ marginBottom: '4px' }">• 支持 MiMo 大模型对话</li>
-                <li :style="{ marginBottom: '4px' }">• 深度思考模式</li>
-                <li :style="{ marginBottom: '4px' }">• 语音输入与合成</li>
-                <li :style="{ marginBottom: '4px' }">• 会话分享与导出</li>
-                <li :style="{ marginBottom: '4px' }">• OAuth 登录（GitHub/Google）</li>
-              </ul>
-            </div>
-            <div>
-              <h4 :style="{ fontSize: '13px', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }">技术栈</h4>
-              <p :style="{ fontSize: '13px', color: 'var(--text-secondary)' }">Vue 3 • NestJS • TypeScript • Prisma • PostgreSQL</p>
-            </div>
-            <button :style="{ marginTop: '20px', width: '100%', padding: '10px', borderRadius: '12px', fontSize: '14px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text-primary)' }" @click="showAboutDialog = false">关闭</button>
           </div>
-        </div>
-      </Transition>
+        </Transition>
+      </template>
     </Teleport>
   </header>
 </template>
