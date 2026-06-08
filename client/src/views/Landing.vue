@@ -145,8 +145,7 @@ function handleSend() {
         <div :style="{ maxWidth: '42rem', margin: '0 auto' }">
           <div
             ref="inputWrapperRef"
-            :style="{ position: 'relative', borderRadius: '16px', border: '2px solid var(--border)', background: 'var(--background)', transition: 'border-color 0.2s' }"
-            @click="landingInputRef?.focus()"
+            :style="{ position: 'relative', borderRadius: '16px', border: '2px solid var(--border)', background: 'var(--background)', transition: 'border-color 0.2s', cursor: 'text' }"
             @focusin="($event.currentTarget as HTMLElement).style.borderColor = 'var(--ring)'"
             @focusout="($event.currentTarget as HTMLElement).style.borderColor = 'var(--border)'"
           >
