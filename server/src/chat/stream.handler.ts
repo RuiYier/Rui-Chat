@@ -163,12 +163,15 @@ export async function handleStream(
 
   // Auto-generate title using AI for first message only
   const convId = (await (persister as any).prisma.message.findUnique({ where: { id: assistantMessageId } }))?.conversationId
+  console.log('[TitleGen] convId:', convId, 'fullContent length:', fullContent?.length)
   if (convId) {
-    const history = await persister.getMessageHistory(convId, 2)
+    const history = await persister.getMessageHistory(convId, 10)
+    console.log('[TitleGen] history length:', history.length)
     if (history.length <= 2 && fullContent) {
       try {
         const userMsg = messages[messages.length - 1]?.content || ''
-        const userText = typeof userMsg === 'string' ? userMsg : userMsg.find((b: any) => b.type === 'text')?.text || ''
+        const userText = typeof userMsg === 'string' ? userMsg : (Array.isArray(userMsg) ? userMsg.find((b: any) => b.type === 'text')?.text || '' : '')
+        console.log('[TitleGen] userText:', userText.slice(0, 50))
         const titleResponse = await aiService.chatCompletion({
           model: 'mimo-v2.5',
           messages: [
@@ -178,11 +181,14 @@ export async function handleStream(
           stream: false,
           max_tokens: 50,
         })
+        console.log('[TitleGen] titleResponse status:', titleResponse.status)
         if (titleResponse.ok) {
           const titleData = await titleResponse.json()
           const title = titleData.choices?.[0]?.message?.content?.trim()
+          console.log('[TitleGen] generated title:', title)
           if (title) {
             await persister.updateConversationTitle(convId, title)
+            console.log('[TitleGen] title updated successfully')
           }
         }
       } catch {
