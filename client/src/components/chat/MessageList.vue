@@ -32,7 +32,7 @@ watch(() => chatStore.messages[chatStore.messages.length - 1]?.content, () => { 
     @scroll="handleScroll"
   >
     <!-- Empty -->
-    <div v-if="chatStore.messages.length === 0" :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }">
+    <div v-if="chatStore.messages.length === 0" :style="{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px', cursor: 'default' }">
       <p :style="{ fontSize: '32px', fontWeight: 400, color: 'var(--text-primary)' }">我能帮你什么？</p>
     </div>
 

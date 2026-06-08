@@ -170,7 +170,7 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
         </div>
       </div>
 
-      <p :style="{ textAlign: 'center', fontSize: '12px', marginTop: '12px', color: 'var(--text-tertiary)' }">内容由 AI 生成，仅供参考</p>
+      <p :style="{ textAlign: 'center', fontSize: '12px', marginTop: '12px', color: 'var(--text-tertiary)', cursor: 'default' }">内容由 AI 生成，仅供参考</p>
     </div>
 
     <div v-if="showVoiceMenu" style="position:fixed;inset:0;z-index:40" @click="showVoiceMenu = false" />

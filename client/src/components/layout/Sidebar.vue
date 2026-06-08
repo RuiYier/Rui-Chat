@@ -71,7 +71,7 @@ const convStore = useConversationStore()
 
     <!-- Bottom -->
     <div v-if="!collapsed" :style="{ padding: '12px', borderTop: '1px solid var(--border)' }">
-      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-tertiary)">
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-tertiary);cursor:default">
         <span style="position:relative;display:flex;width:8px;height:8px">
           <span style="position:absolute;inset:0;border-radius:50%;background:#4ade80;opacity:0.75;animation:ping 1s cubic-bezier(0,0,0.2,1) infinite"></span>
           <span style="position:relative;display:inline-flex;border-radius:50%;width:8px;height:8px;background:#22c55e"></span>
