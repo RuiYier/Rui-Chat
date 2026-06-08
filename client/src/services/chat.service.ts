@@ -6,7 +6,7 @@ export interface SSECallbacks {
   onToolCall?: (id: string, name: string, args: string) => void
   onToolProgress?: (id: string, progress: number, message: string) => void
   onToolResult?: (id: string, result: string) => void
-  onComplete?: (messageId: string) => void
+  onComplete?: (messageId: string, conversationId?: string) => void
   onError?: (message: string) => void
 }
 
@@ -83,7 +83,7 @@ export const ChatService = {
                 callbacks?.onToolResult?.(parsed.id, parsed.result)
                 break
               case 'complete':
-                callbacks?.onComplete?.(parsed.messageId)
+                callbacks?.onComplete?.(parsed.messageId, parsed.conversationId)
                 break
               case 'error':
                 callbacks?.onError?.(parsed.message)

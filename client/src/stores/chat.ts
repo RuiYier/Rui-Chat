@@ -118,11 +118,15 @@ export const useChatStore = defineStore('chat', () => {
               messageStates.value.set(assistantMsgId, { ...s, activeTools: tools })
             }
           },
-          onComplete(messageId) {
-            // If conversationId was set from server, update
+          onComplete(messageId, conversationId) {
+            // Update conversationId from server if new conversation
+            if (conversationId && !currentConversationId.value) {
+              currentConversationId.value = conversationId
+            }
+            // Update message conversationId
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
-            if (idx !== -1 && currentConversationId.value) {
-              messages.value[idx].conversationId = currentConversationId.value
+            if (idx !== -1) {
+              messages.value[idx].conversationId = currentConversationId.value || ''
             }
           },
           onError(message) {

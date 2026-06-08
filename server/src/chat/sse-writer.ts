@@ -30,8 +30,8 @@ export class SSEWriter {
     this.send({ type: 'tool_result', id, result })
   }
 
-  sendComplete(messageId: string) {
-    this.send({ type: 'complete', messageId })
+  sendComplete(messageId: string, conversationId?: string) {
+    this.send({ type: 'complete', messageId, conversationId })
   }
 
   error(message: string) {

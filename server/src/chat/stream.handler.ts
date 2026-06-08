@@ -19,7 +19,7 @@ export async function handleStream(
   toolRegistry: ToolRegistry,
   sseWriter: SSEWriter,
   assistantMessageId: string,
-  options: StreamOptions,
+  options: StreamOptions & { conversationId?: string },
 ) {
   const { model, messages, tools, temperature, maxTokens, enableThinking } = options
 
@@ -173,6 +173,6 @@ export async function handleStream(
     }
   }
 
-  sseWriter.sendComplete(assistantMessageId)
+  sseWriter.sendComplete(assistantMessageId, options.conversationId)
   sseWriter.close()
 }

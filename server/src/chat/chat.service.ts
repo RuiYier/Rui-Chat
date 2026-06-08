@@ -108,6 +108,7 @@ export class ChatService {
         messages: contextMessages,
         tools,
         enableThinking: thinking,
+        conversationId,
       })
     } catch (err: any) {
       sseWriter.error(err.message || '处理请求时出错')
