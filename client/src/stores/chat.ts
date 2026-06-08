@@ -59,7 +59,9 @@ export const useChatStore = defineStore('chat', () => {
 
     // Initialize state
     const state = createMessageState()
-    messageStates.value.set(assistantMsgId, state)
+    const newStates = new Map(messageStates.value)
+    newStates.set(assistantMsgId, state)
+    messageStates.value = newStates
     streamingMessageId.value = assistantMsgId
     streaming.value = true
 
@@ -72,7 +74,9 @@ export const useChatStore = defineStore('chat', () => {
         {
           onThinking(thinkingContent) {
             const s = getMessageState(assistantMsgId)
-            messageStates.value.set(assistantMsgId, appendThinking(s, thinkingContent))
+            const newStates = new Map(messageStates.value)
+            newStates.set(assistantMsgId, appendThinking(s, thinkingContent))
+            messageStates.value = newStates
             // Also update the message
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
@@ -81,11 +85,14 @@ export const useChatStore = defineStore('chat', () => {
           },
           onAnswer(answerContent) {
             const s = getMessageState(assistantMsgId)
+            let updated = s
             if (s.phase === 'idle' || s.phase === 'thinking') {
-              messageStates.value.set(assistantMsgId, transitionPhase(s, 'answering'))
+              updated = transitionPhase(s, 'answering')
             }
-            const updated = getMessageState(assistantMsgId)
-            messageStates.value.set(assistantMsgId, appendAnswer(updated, answerContent))
+            updated = appendAnswer(updated, answerContent)
+            const newStates = new Map(messageStates.value)
+            newStates.set(assistantMsgId, updated)
+            messageStates.value = newStates
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
               messages.value[idx].content += answerContent
@@ -95,10 +102,12 @@ export const useChatStore = defineStore('chat', () => {
             const s = getMessageState(assistantMsgId)
             const tools = new Map(s.activeTools)
             tools.set(id, { name, state: 'running' })
-            messageStates.value.set(assistantMsgId, {
+            const newStates = new Map(messageStates.value)
+            newStates.set(assistantMsgId, {
               ...transitionPhase(s, 'tool_calling'),
               activeTools: tools,
             })
+            messageStates.value = newStates
           },
           onToolProgress(id, _progress, message) {
             const s = getMessageState(assistantMsgId)
@@ -106,7 +115,9 @@ export const useChatStore = defineStore('chat', () => {
             const tool = tools.get(id)
             if (tool) {
               tools.set(id, { ...tool, name: tool.name + ` (${message})` })
-              messageStates.value.set(assistantMsgId, { ...s, activeTools: tools })
+              const newStates = new Map(messageStates.value)
+              newStates.set(assistantMsgId, { ...s, activeTools: tools })
+              messageStates.value = newStates
             }
           },
           onToolResult(id, result) {
@@ -115,7 +126,9 @@ export const useChatStore = defineStore('chat', () => {
             const tool = tools.get(id)
             if (tool) {
               tools.set(id, { ...tool, state: 'done', result })
-              messageStates.value.set(assistantMsgId, { ...s, activeTools: tools })
+              const newStates = new Map(messageStates.value)
+              newStates.set(assistantMsgId, { ...s, activeTools: tools })
+              messageStates.value = newStates
             }
           },
           onComplete(messageId, conversationId) {
@@ -131,7 +144,9 @@ export const useChatStore = defineStore('chat', () => {
           },
           onError(message) {
             const s = getMessageState(assistantMsgId)
-            messageStates.value.set(assistantMsgId, transitionPhase(s, 'error'))
+            const newStates = new Map(messageStates.value)
+            newStates.set(assistantMsgId, transitionPhase(s, 'error'))
+            messageStates.value = newStates
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
               messages.value[idx].content = `错误: ${message}`
