@@ -36,6 +36,10 @@ export const useChatStore = defineStore('chat', () => {
     if (streaming.value) return
     if (!content.trim() && (!attachments || attachments.length === 0)) return
 
+    // Performance: mark start time
+    const perfStart = performance.now()
+    console.log(`[Perf] sendMessage start: ${perfStart.toFixed(2)}ms`)
+
     // Check if image attachments exist and auto-switch model
     const hasImages = attachments?.some(a => a.type === 'image')
     let useModel = config.value.model
@@ -75,6 +79,12 @@ export const useChatStore = defineStore('chat', () => {
     streamingMessageId.value = assistantMsgId
     streaming.value = true
 
+    // Performance: first frame rendered (placeholder created)
+    const firstFrame = performance.now()
+    console.log(`[Perf] First frame (placeholder): ${(firstFrame - perfStart).toFixed(2)}ms`)
+    console.log(`[Perf] NanoID generation + Vue reactivity: ${(firstFrame - perfStart).toFixed(2)}ms`)
+    let firstTokenReceived = false
+
     try {
       await ChatService.sendMessage(
         content,
@@ -94,6 +104,14 @@ export const useChatStore = defineStore('chat', () => {
             }
           },
           onAnswer(answerContent) {
+            // Performance: first token received
+            if (!firstTokenReceived) {
+              firstTokenReceived = true
+              const firstToken = performance.now()
+              console.log(`[Perf] First token received: ${(firstToken - perfStart).toFixed(2)}ms`)
+              console.log(`[Perf] Time from placeholder to first token: ${(firstToken - firstFrame).toFixed(2)}ms`)
+            }
+
             const s = getMessageState(assistantMsgId)
             let updated = s
             if (s.phase === 'idle' || s.phase === 'thinking') {
@@ -142,6 +160,14 @@ export const useChatStore = defineStore('chat', () => {
             }
           },
           onComplete(messageId, conversationId) {
+            // Performance: stream complete
+            const streamEnd = performance.now()
+            console.log(`[Perf] Stream complete: ${(streamEnd - perfStart).toFixed(2)}ms total`)
+            console.log(`[Perf] Summary:`)
+            console.log(`  - First frame (placeholder): ${(firstFrame - perfStart).toFixed(2)}ms`)
+            console.log(`  - First token: ${(streamEnd - perfStart).toFixed(2)}ms`)
+            console.log(`  - Model: ${useModel}`)
+
             // Update conversationId from server if new conversation
             if (conversationId && !currentConversationId.value) {
               currentConversationId.value = conversationId
@@ -151,6 +177,12 @@ export const useChatStore = defineStore('chat', () => {
             if (idx !== -1) {
               messages.value[idx].conversationId = currentConversationId.value || ''
             }
+
+            // Clear active tools after stream completes
+            const s = getMessageState(assistantMsgId)
+            const newStates = new Map(messageStates.value)
+            newStates.set(assistantMsgId, { ...s, activeTools: new Map() })
+            messageStates.value = newStates
           },
           onError(message) {
             const s = getMessageState(assistantMsgId)
@@ -178,7 +210,36 @@ export const useChatStore = defineStore('chat', () => {
   async function loadMessages(conversationId: string) {
     currentConversationId.value = conversationId
     try {
-      messages.value = await ChatService.loadMessages(conversationId)
+      const loadedMessages = await ChatService.loadMessages(conversationId)
+      messages.value = loadedMessages
+
+      // Initialize message states for messages with thinking or tool calls
+      const newStates = new Map(messageStates.value)
+      for (const msg of loadedMessages) {
+        if (msg.role === 'assistant' && (msg.thinking || msg.toolCalls)) {
+          const activeTools = new Map<string, { name: string; state: 'running' | 'done' | 'error'; result?: string }>()
+
+          // Restore tool calls from database
+          if (msg.toolCalls && Array.isArray(msg.toolCalls)) {
+            for (const tc of msg.toolCalls) {
+              activeTools.set(tc.id || tc.name, {
+                name: tc.name || 'unknown',
+                state: 'done',
+                result: tc.result,
+              })
+            }
+          }
+
+          const state: MessageState = {
+            phase: 'idle',
+            thinkingContent: msg.thinking || '',
+            answerContent: msg.content || '',
+            activeTools,
+          }
+          newStates.set(msg.id, state)
+        }
+      }
+      messageStates.value = newStates
     } catch {
       messages.value = []
     }

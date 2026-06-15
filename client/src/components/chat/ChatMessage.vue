@@ -53,7 +53,8 @@ defineProps<{
       <!-- Tools -->
       <div v-if="state.activeTools.size > 0" :style="{ display: 'flex', flexDirection: 'column', gap: '8px' }">
         <div v-for="[id, tool] in state.activeTools" :key="id" :style="{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', padding: '8px 12px', borderRadius: '8px', background: 'var(--input-bg)', color: 'var(--text-secondary)', cursor: 'default', userSelect: 'none' }">
-          <el-icon class="is-loading" :size="14"><Loading /></el-icon>
+          <el-icon v-if="tool.state === 'running'" class="is-loading" :size="14"><Loading /></el-icon>
+          <el-icon v-else :size="14" style="color:var(--accent-green)"><Check /></el-icon>
           <span>{{ tool.name }}</span>
         </div>
       </div>
