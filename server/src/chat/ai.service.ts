@@ -44,14 +44,25 @@ export class AiService {
     if (options.audio) body.audio = options.audio
     if (options.asr_options) body.asr_options = options.asr_options
 
-    return fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify(body),
-    })
+    // 添加超时机制，默认 60 秒
+    const timeout = this.configService.get('API_TIMEOUT', 60000)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+      return response
+    } finally {
+      clearTimeout(timeoutId)
+    }
   }
 
   async speechToText(audioBase64: string, mimeType: string, language: string = 'auto'): Promise<string> {

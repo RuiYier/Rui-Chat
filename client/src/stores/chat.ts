@@ -8,6 +8,10 @@ import { DEFAULT_MODEL } from '@/constants/models'
 import { DEFAULT_VOICE } from '@/constants/voices'
 import { ElMessage } from 'element-plus'
 
+/**
+ * 聊天状态管理 Store
+ * 管理消息列表、消息状态、流式传输状态等
+ */
 export const useChatStore = defineStore('chat', () => {
   const messages = ref<Message[]>([])
   const messageStates = ref<Map<string, MessageState>>(new Map())
@@ -16,31 +20,39 @@ export const useChatStore = defineStore('chat', () => {
   const currentConversationId = ref<string | null>(null)
   const abortController = ref<AbortController | null>(null)
 
+  /** 聊天配置 */
   const config = ref<ChatConfig>({
     model: DEFAULT_MODEL,
     thinking: true,
     webSearch: false,
   })
 
+  /** 选中的语音 */
   const selectedVoice = ref<string>(
     localStorage.getItem('selectedVoice') || DEFAULT_VOICE,
   )
 
   const currentMessages = computed(() => messages.value)
 
+  /**
+   * 获取消息状态
+   * @param messageId 消息 ID
+   * @returns 消息状态对象
+   */
   function getMessageState(messageId: string): MessageState {
     return messageStates.value.get(messageId) || createMessageState()
   }
 
+  /**
+   * 发送消息
+   * @param content 消息内容
+   * @param attachments 附件列表（可选）
+   */
   async function sendMessage(content: string, attachments?: any[]) {
     if (streaming.value) return
     if (!content.trim() && (!attachments || attachments.length === 0)) return
 
-    // Performance: mark start time
-    const perfStart = performance.now()
-    console.log(`[Perf] sendMessage start: ${perfStart.toFixed(2)}ms`)
-
-    // Check if image attachments exist and auto-switch model
+    // 检查是否有图片附件，自动切换模型
     const hasImages = attachments?.some(a => a.type === 'image')
     let useModel = config.value.model
     if (hasImages && config.value.model === 'mimo-v2.5-pro') {
@@ -48,7 +60,7 @@ export const useChatStore = defineStore('chat', () => {
       ElMessage.info('图片消息自动切换至 MiMo-V2.5 模型')
     }
 
-    // Add user message
+    // 添加用户消息
     const userMsg: Message = {
       id: nanoid(),
       conversationId: currentConversationId.value || '',
@@ -59,7 +71,7 @@ export const useChatStore = defineStore('chat', () => {
     }
     messages.value.push(userMsg)
 
-    // Create assistant message placeholder
+    // 创建助手消息占位
     const assistantMsgId = nanoid()
     const assistantMsg: Message = {
       id: assistantMsgId,
@@ -71,7 +83,7 @@ export const useChatStore = defineStore('chat', () => {
     }
     messages.value.push(assistantMsg)
 
-    // Initialize state
+    // 初始化消息状态
     const state = createMessageState()
     const newStates = new Map(messageStates.value)
     newStates.set(assistantMsgId, state)
@@ -79,11 +91,9 @@ export const useChatStore = defineStore('chat', () => {
     streamingMessageId.value = assistantMsgId
     streaming.value = true
 
-    // Performance: first frame rendered (placeholder created)
-    const firstFrame = performance.now()
-    console.log(`[Perf] First frame (placeholder): ${(firstFrame - perfStart).toFixed(2)}ms`)
-    console.log(`[Perf] NanoID generation + Vue reactivity: ${(firstFrame - perfStart).toFixed(2)}ms`)
-    let firstTokenReceived = false
+    // 创建 AbortController 以支持取消流式传输
+    const controller = new AbortController()
+    abortController.value = controller
 
     try {
       await ChatService.sendMessage(
@@ -97,21 +107,13 @@ export const useChatStore = defineStore('chat', () => {
             const newStates = new Map(messageStates.value)
             newStates.set(assistantMsgId, appendThinking(s, thinkingContent))
             messageStates.value = newStates
-            // Also update the message
+            // 同时更新消息对象
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
               messages.value[idx].thinking = (messages.value[idx].thinking || '') + thinkingContent
             }
           },
           onAnswer(answerContent) {
-            // Performance: first token received
-            if (!firstTokenReceived) {
-              firstTokenReceived = true
-              const firstToken = performance.now()
-              console.log(`[Perf] First token received: ${(firstToken - perfStart).toFixed(2)}ms`)
-              console.log(`[Perf] Time from placeholder to first token: ${(firstToken - firstFrame).toFixed(2)}ms`)
-            }
-
             const s = getMessageState(assistantMsgId)
             let updated = s
             if (s.phase === 'idle' || s.phase === 'thinking') {
@@ -142,7 +144,7 @@ export const useChatStore = defineStore('chat', () => {
             const tools = new Map(s.activeTools)
             const tool = tools.get(id)
             if (tool) {
-              tools.set(id, { ...tool, name: tool.name + ` (${message})` })
+              tools.set(id, { ...tool, progress: message })
               const newStates = new Map(messageStates.value)
               newStates.set(assistantMsgId, { ...s, activeTools: tools })
               messageStates.value = newStates
@@ -160,25 +162,17 @@ export const useChatStore = defineStore('chat', () => {
             }
           },
           onComplete(messageId, conversationId) {
-            // Performance: stream complete
-            const streamEnd = performance.now()
-            console.log(`[Perf] Stream complete: ${(streamEnd - perfStart).toFixed(2)}ms total`)
-            console.log(`[Perf] Summary:`)
-            console.log(`  - First frame (placeholder): ${(firstFrame - perfStart).toFixed(2)}ms`)
-            console.log(`  - First token: ${(streamEnd - perfStart).toFixed(2)}ms`)
-            console.log(`  - Model: ${useModel}`)
-
-            // Update conversationId from server if new conversation
+            // 如果是新会话，更新会话 ID
             if (conversationId && !currentConversationId.value) {
               currentConversationId.value = conversationId
             }
-            // Update message conversationId
+            // 更新消息的会话 ID
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
               messages.value[idx].conversationId = currentConversationId.value || ''
             }
 
-            // Clear active tools after stream completes
+            // 清空活跃工具
             const s = getMessageState(assistantMsgId)
             const newStates = new Map(messageStates.value)
             newStates.set(assistantMsgId, { ...s, activeTools: new Map() })
@@ -195,6 +189,7 @@ export const useChatStore = defineStore('chat', () => {
             }
           },
         },
+        controller.signal,
       )
     } catch (err: any) {
       const idx = messages.value.findIndex(m => m.id === assistantMsgId)
@@ -213,13 +208,12 @@ export const useChatStore = defineStore('chat', () => {
       const loadedMessages = await ChatService.loadMessages(conversationId)
       messages.value = loadedMessages
 
-      // Initialize message states for messages with thinking or tool calls
+      // 恢复包含思考过程或工具调用的消息状态
       const newStates = new Map(messageStates.value)
       for (const msg of loadedMessages) {
         if (msg.role === 'assistant' && (msg.thinking || msg.toolCalls)) {
           const activeTools = new Map<string, { name: string; state: 'running' | 'done' | 'error'; result?: string }>()
 
-          // Restore tool calls from database
           if (msg.toolCalls && Array.isArray(msg.toolCalls)) {
             for (const tc of msg.toolCalls) {
               activeTools.set(tc.id || tc.name, {
@@ -230,13 +224,12 @@ export const useChatStore = defineStore('chat', () => {
             }
           }
 
-          const state: MessageState = {
+          newStates.set(msg.id, {
             phase: 'idle',
             thinkingContent: msg.thinking || '',
             answerContent: msg.content || '',
             activeTools,
-          }
-          newStates.set(msg.id, state)
+          })
         }
       }
       messageStates.value = newStates
@@ -249,14 +242,14 @@ export const useChatStore = defineStore('chat', () => {
     currentConversationId.value = id
     if (!id) {
       messages.value = []
-      messageStates.value.clear()
+      messageStates.value = new Map()
     }
   }
 
   function newConversation() {
     currentConversationId.value = null
     messages.value = []
-    messageStates.value.clear()
+    messageStates.value = new Map()
   }
 
   function setVoice(voice: string) {

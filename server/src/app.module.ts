@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { APP_GUARD } from '@nestjs/core'
 import { PrismaModule } from './prisma/prisma.module'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -18,6 +20,29 @@ import { ToolsModule } from './tools/tools.module'
       isGlobal: true,
       envFilePath: '../.env.local',
     }),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'short',
+            ttl: 1000,
+            limit: configService.get('THROTTLE_SHORT_LIMIT', 3),
+          },
+          {
+            name: 'medium',
+            ttl: 10000,
+            limit: configService.get('THROTTLE_MEDIUM_LIMIT', 20),
+          },
+          {
+            name: 'long',
+            ttl: 60000,
+            limit: configService.get('THROTTLE_LONG_LIMIT', 100),
+          },
+        ],
+      }),
+      inject: [ConfigService],
+    }),
     PrismaModule,
     AuthModule,
     UserModule,
@@ -29,6 +54,12 @@ import { ToolsModule } from './tools/tools.module'
     ShareModule,
     ExportModule,
     ToolsModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

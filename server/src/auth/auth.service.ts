@@ -71,7 +71,7 @@ export class AuthService {
     name?: string
     image?: string
   }) {
-    // Check if account already linked
+    // 检查是否已关联账号
     const existingAccount = await this.prisma.account.findUnique({
       where: {
         provider_providerAccountId: {
@@ -92,48 +92,65 @@ export class AuthService {
       }
     }
 
-    // Find or create user by email
-    let user = profile.email
-      ? await this.prisma.user.findUnique({ where: { email: profile.email } })
-      : null
+    // 使用事务保护用户创建和账号关联，防止并发竞态
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 按邮箱查找已有用户
+      let user = profile.email
+        ? await tx.user.findUnique({ where: { email: profile.email } })
+        : null
 
-    if (!user) {
-      const baseUsername = profile.email?.split('@')[0] || profile.name || 'user'
-      let username = baseUsername
-      let counter = 1
-      while (await this.prisma.user.findUnique({ where: { username } })) {
-        username = `${baseUsername}${counter++}`
+      if (!user) {
+        // 生成唯一用户名，捕获唯一约束冲突后重试
+        const baseUsername = profile.email?.split('@')[0] || profile.name || 'user'
+        let username = baseUsername
+        let counter = 1
+        let created = false
+        while (!created) {
+          try {
+            user = await tx.user.create({
+              data: {
+                username,
+                password: '',
+                email: profile.email,
+                name: profile.name,
+                image: profile.image,
+                emailVerified: new Date(),
+              },
+            })
+            created = true
+          } catch (err: any) {
+            if (err.code === 'P2002') {
+              username = `${baseUsername}${counter++}`
+            } else {
+              throw err
+            }
+          }
+        }
       }
 
-      user = await this.prisma.user.create({
+      // user 此时一定不为 null（要么从数据库找到，要么刚创建）
+      const userId = user!.id
+
+      // 关联 OAuth 账号
+      await tx.account.create({
         data: {
-          username,
-          password: '', // OAuth users don't have passwords
-          email: profile.email,
-          name: profile.name,
-          image: profile.image,
-          emailVerified: new Date(),
+          userId,
+          type: 'oauth',
+          provider: profile.provider,
+          providerAccountId: profile.providerAccountId,
         },
       })
-    }
 
-    // Link account
-    await this.prisma.account.create({
-      data: {
-        userId: user.id,
-        type: 'oauth',
-        provider: profile.provider,
-        providerAccountId: profile.providerAccountId,
-      },
+      return {
+        id: userId,
+        username: user!.username,
+        email: user!.email,
+        name: user!.name,
+        image: user!.image,
+      }
     })
 
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      name: user.name,
-      image: user.image,
-    }
+    return result
   }
 
   async getMe(userId: string) {
@@ -141,6 +158,15 @@ export class AuthService {
       where: { id: userId },
       select: { id: true, username: true, email: true, name: true, image: true, createdAt: true },
     })
+  }
+
+  /**
+   * 为指定用户生成 JWT Token
+   * @param userId 用户 ID
+   * @returns JWT Token 字符串
+   */
+  generateTokenForUser(userId: string): string {
+    return this.jwtService.sign({ sub: userId })
   }
 
   private generateToken(userId: string): string {

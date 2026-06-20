@@ -7,16 +7,18 @@
 ## 技术栈
 
 ### 前端
+
 - **框架**: Vue 3 (Composition API)
 - **构建工具**: Vite
 - **语言**: TypeScript
 - **状态管理**: Pinia
 - **路由**: Vue Router 4
 - **UI 组件库**: Element Plus
-- **字体**: Geom + PingFang SC 
+- **字体**: Geom + PingFang SC
 - **Markdown**: Markdown-it + Highlight.js
 
 ### 后端
+
 - **框架**: NestJS
 - **语言**: TypeScript
 - **数据库**: PostgreSQL
@@ -24,6 +26,7 @@
 - **认证**: Passport.js (JWT + Google OAuth + GitHub OAuth)
 
 ### AI 模型
+
 - **MiMo-V2.5-Pro**: 旗舰推理模型
 - **MiMo-V2.5**: 通用对话模型
 - **MiMo-V2.5-ASR**: 语音识别
@@ -32,6 +35,7 @@
 ## 功能
 
 ### 对话
+
 - 流式响应 (SSE)
 - 多模型切换 (mimo-v2.5-pro / mimo-v2.5)
 - 深度思考模式 (推理过程可视化)
@@ -39,28 +43,32 @@
 - 消息操作 (复制/朗读)
 
 ### 语音
+
 - 语音输入 (mimo-v2.5-asr)
 - 语音输出 (mimo-v2.5-tts，9种音色)
 - 语音选择持久化
 
 ### 文件
+
 - 上传 .txt / .md 文件 (最大 1MB)
 - 上传图片文件 (png/jpg/jpeg/gif/webp)
 - 粘贴图片 (Ctrl+V)
 
 ### 多模态
+
 - 图片理解 (发送图片给 AI 分析，自动切换 MiMo-V2.5)
 - 音频理解 (发送音频给 AI 分析)
 
 ### 工具
+
 - Web 搜索 (Tavily API)
 
 ### 其他
+
 - 对话分享 (公开链接)
 - 导出对话 (Markdown)
 - 深色模式
 - 响应式布局
-
 
 ## 开发
 
@@ -78,13 +86,11 @@ pnpm install
 
 ### 配置
 
-编辑 `.env.local` 文件：
-
 ```bash
 # 数据库
 DATABASE_URL="postgresql://postgres:password@localhost:5432/ruichat"
 
-# JWT
+# JWT（必须设置）
 JWT_SECRET="your-secret-key"
 
 # Google OAuth (可选)
@@ -95,18 +101,27 @@ GOOGLE_CLIENT_SECRET=""
 GITHUB_CLIENT_ID=""
 GITHUB_CLIENT_SECRET=""
 
-# xiaomimimo API
+# Mimo API
 MIMO_API_KEY="your-api-key"
 MIMO_BASE_URL="https://token-plan-cn.xiaomimimo.com/v1"
 
 # Tavily Web Search (可选)
 TAVILY_API_KEY=""
 
+# API 超时时间（毫秒，默认 60000）
+API_TIMEOUT=60000
+
+# 速率限制配置
+THROTTLE_SHORT_LIMIT=3
+THROTTLE_MEDIUM_LIMIT=20
+THROTTLE_LONG_LIMIT=100
+
 # App
+CORS_ORIGINS="http://localhost:5173"
 VITE_API_BASE_URL="http://localhost:3000"
 ```
 
-### 数据库
+#### 数据库
 
 ```bash
 # 生成 Prisma Client

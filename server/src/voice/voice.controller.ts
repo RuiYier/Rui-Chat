@@ -2,6 +2,7 @@ import { Controller, Post, Body, UseGuards, Res, UploadedFile, UseInterceptors, 
 import { FileInterceptor } from '@nestjs/platform-express'
 import { VoiceService } from './voice.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { TextToSpeechDto } from './dto/tts.dto'
 import { Response } from 'express'
 
 @Controller('voice')
@@ -26,7 +27,7 @@ export class VoiceController {
   @Post('tts')
   @UseGuards(JwtAuthGuard)
   async textToSpeech(
-    @Body() body: { text: string; voice?: string; format?: string; style?: string },
+    @Body() body: TextToSpeechDto,
     @Res() res: Response,
   ) {
     const audioBuffer = await this.voiceService.textToSpeech(
