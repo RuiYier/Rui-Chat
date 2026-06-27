@@ -10,10 +10,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
     private prisma: PrismaService,
   ) {
+    const secret = configService.get<string>('JWT_SECRET')
+    if (!secret) {
+      throw new Error('JWT_SECRET 环境变量必须设置')
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'rui-chat-jwt-secret'),
+      secretOrKey: secret,
     })
   }
 

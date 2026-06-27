@@ -17,16 +17,21 @@ if (authStore.isAuthenticated) {
 
 function onLoginSuccess() {
   showLogin.value = false
-  router.push('/chat')
+  // Check if there's a pending message from before login
+  const pendingMsg = localStorage.getItem('pendingMessage')
+  if (pendingMsg) {
+    router.push('/chat')
+  }
 }
 
 function handleSend() {
-  if (!authStore.isAuthenticated) {
-    showLogin.value = true
-    return
-  }
   if (inputValue.value.trim()) {
-    router.push({ path: '/chat', query: { msg: inputValue.value } })
+    localStorage.setItem('pendingMessage', inputValue.value)
+    if (!authStore.isAuthenticated) {
+      showLogin.value = true
+      return
+    }
+    router.push('/chat')
   }
 }
 </script>

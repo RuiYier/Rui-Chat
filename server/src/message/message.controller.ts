@@ -18,19 +18,23 @@ export class MessageController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async findOne(@Param('id') id: string) {
-    return this.messageService.findOne(id)
+  async findOne(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.messageService.findOne(id, userId)
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() body: { content?: string; thinking?: string }) {
-    return this.messageService.update(id, body)
+  async update(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: { content?: string; thinking?: string },
+  ) {
+    return this.messageService.update(id, userId, body)
   }
 
   @Delete('batch')
   @UseGuards(JwtAuthGuard)
-  async deleteBatch(@Body('ids') ids: string[]) {
-    return this.messageService.deleteBatch(ids)
+  async deleteBatch(@CurrentUser('id') userId: string, @Body('ids') ids: string[]) {
+    return this.messageService.deleteBatch(ids, userId)
   }
 }

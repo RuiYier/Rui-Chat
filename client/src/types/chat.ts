@@ -25,7 +25,7 @@ export interface MessageState {
   phase: MessagePhase
   thinkingContent: string
   answerContent: string
-  activeTools: Map<string, { name: string; state: 'running' | 'done' | 'error'; result?: string }>
+  activeTools: Map<string, { name: string; state: 'running' | 'done' | 'error'; result?: string; progress?: string }>
 }
 
 export interface ChatConfig {

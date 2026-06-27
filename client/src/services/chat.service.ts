@@ -17,6 +17,7 @@ export const ChatService = {
     conversationId?: string,
     attachments?: any[],
     callbacks?: SSECallbacks,
+    signal?: AbortSignal,
   ): Promise<void> {
     const token = localStorage.getItem('token')
     if (!token) throw new Error('未登录')
@@ -35,6 +36,7 @@ export const ChatService = {
         webSearch: config.webSearch,
         attachments,
       }),
+      signal,
     })
 
     if (!response.ok) {

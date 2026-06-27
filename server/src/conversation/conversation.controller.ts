@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@n
 import { ConversationService } from './conversation.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 import { CurrentUser } from '../common/decorators/current-user.decorator'
+import { UpdateConversationDto } from './dto/update-conversation.dto'
 
 @Controller('conversations')
 export class ConversationController {
@@ -24,7 +25,7 @@ export class ConversationController {
   async update(
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() body: { title?: string; isPinned?: boolean },
+    @Body() body: UpdateConversationDto,
   ) {
     return this.conversationService.update(userId, id, body)
   }

@@ -14,10 +14,16 @@ import { GithubStrategy } from './strategies/github.strategy'
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'rui-chat-jwt-secret'),
-        signOptions: { expiresIn: '7d' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET')
+        if (!secret) {
+          throw new Error('JWT_SECRET 环境变量必须设置')
+        }
+        return {
+          secret,
+          signOptions: { expiresIn: '7d' },
+        }
+      },
       inject: [ConfigService],
     }),
   ],

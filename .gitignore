@@ -3,7 +3,6 @@ node_modules
 server/.env
 dist
 .nest
-*.jpg
 *.tsbuildinfo
 *.d.ts
 CLAUDE.md

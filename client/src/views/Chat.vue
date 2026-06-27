@@ -21,10 +21,11 @@ onMounted(async () => {
     chatStore.setConversation(convId)
     await chatStore.loadMessages(convId)
   }
-  const msg = route.query.msg as string | undefined
-  if (msg) {
-    handleSend(msg)
-    router.replace({ query: {} })
+  // Read pending message from localStorage (from landing page)
+  const pendingMsg = localStorage.getItem('pendingMessage')
+  if (pendingMsg) {
+    localStorage.removeItem('pendingMessage')
+    handleSend(pendingMsg)
   }
 })
 

@@ -40,4 +40,9 @@ router.beforeEach((to) => {
   }
 })
 
+// 监听 401 事件，使用 router 跳转而非硬刷新
+window.addEventListener('auth:unauthorized', () => {
+  router.push({ name: 'landing' })
+})
+
 export default router
