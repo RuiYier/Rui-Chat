@@ -37,7 +37,32 @@ function handleSend() {
 </script>
 
 <template>
-  <div :style="{ minHeight: '100vh', background: 'var(--background)' }">
+  <div :style="{ minHeight: '100vh', background: 'var(--background)', position: 'relative' }">
+    <!-- Login button -->
+    <button
+      v-if="!authStore.isAuthenticated"
+      :style="{
+        position: 'absolute',
+        top: '24px',
+        right: '24px',
+        padding: '8px 20px',
+        borderRadius: '12px',
+        fontSize: '14px',
+        fontWeight: '500',
+        border: '1.5px solid var(--border)',
+        background: 'transparent',
+        cursor: 'pointer',
+        color: 'var(--text-primary)',
+        transition: 'all 0.2s',
+        zIndex: 10,
+      }"
+      @mouseenter="($event.target as HTMLElement).style.borderColor = 'var(--ring)'; ($event.target as HTMLElement).style.color = 'var(--ring)'"
+      @mouseleave="($event.target as HTMLElement).style.borderColor = 'var(--border)'; ($event.target as HTMLElement).style.color = 'var(--text-primary)'"
+      @click="showLogin = true"
+    >
+      登录
+    </button>
+
     <div
       :style="{
         display: 'flex',
