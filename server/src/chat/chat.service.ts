@@ -57,7 +57,7 @@ export class ChatService {
       )
 
       // 获取历史记录并构建上下文
-      const contextMessages = await this.buildContext(conversationId, content, attachments)
+      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearch)
 
       // 设置持久化器
       const persister = new MessagePersister(this.prisma)
@@ -130,7 +130,7 @@ export class ChatService {
   /**
    * 获取历史记录并构建上下文
    */
-  private async buildContext(conversationId: string, content: string, attachments?: any[]) {
+  private async buildContext(conversationId: string, content: string, attachments?: any[], webSearch?: boolean) {
     const history = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
@@ -141,7 +141,7 @@ export class ChatService {
     return buildContextMessages(history.slice(0, -2), {
       role: 'user',
       content,
-    }, attachments)
+    }, attachments, { hasWebSearch: webSearch ?? false })
   }
 
   /**

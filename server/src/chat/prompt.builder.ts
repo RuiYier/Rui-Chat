@@ -45,13 +45,14 @@ export function buildContextMessages(
   history: Array<{ role: string; content: string; thinking?: string | null }>,
   currentUserMessage: any,
   attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>,
+  options?: { hasWebSearch?: boolean },
 ): any[] {
   const messages: any[] = []
 
   // Add system prompt (text attachments only)
   messages.push({
     role: 'system',
-    content: buildSystemPrompt({ hasWebSearch: true, attachments }),
+    content: buildSystemPrompt({ hasWebSearch: options?.hasWebSearch ?? false, attachments }),
   })
 
   // Add conversation history (last 20 messages for context window)
