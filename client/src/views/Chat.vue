@@ -8,6 +8,7 @@ import MessageList from '@/components/chat/MessageList.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ModelSelector from '@/components/chat/ModelSelector.vue'
 import Header from '@/components/layout/Header.vue'
+import ArtifactPanel from '@/components/artifacts/ArtifactPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,8 +67,13 @@ async function handleNewChat() {
       </Header>
     </template>
     <template #default>
-      <MessageList />
-      <ChatInput @send="handleSend" />
+      <div :style="{ display: 'flex', flex: 1, minHeight: 0, width: '100%', overflow: 'hidden', position: 'relative' }">
+        <div :style="{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }">
+          <MessageList />
+          <ChatInput @send="handleSend" />
+        </div>
+        <ArtifactPanel />
+      </div>
     </template>
   </AppLayout>
 </template>

@@ -11,9 +11,11 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "axios": "^1.9.0",
+    "dompurify": "^3.4.13",
     "element-plus": "^2.10.3",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.1.0",
+    "mermaid": "^11.16.1",
     "nanoid": "^5.1.5",
     "pinia": "^3.0.3",
     "vue": "^3.5.16",
