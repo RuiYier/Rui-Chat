@@ -6,9 +6,22 @@ export interface SSECallbacks {
   onToolCall?: (id: string, name: string, args: string) => void
   onToolProgress?: (id: string, progress: number, message: string) => void
   onToolResult?: (id: string, result: string) => void
-  onComplete?: (messageId: string, conversationId?: string) => void
+  onComplete?: (messageId: string, conversationId?: string, userMessageId?: string) => void
   onTitle?: (conversationId: string, title: string) => void
   onError?: (message: string) => void
+}
+
+/** 读取本地 MCP 服务器选择；未存储或解析失败时返回 undefined（服务端默认全选） */
+function readMcpServers(): string[] | undefined {
+  const raw = localStorage.getItem('mcpSelectedServers')
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.every(v => typeof v === 'string')) return parsed
+    return undefined
+  } catch {
+    return undefined
+  }
 }
 
 export const ChatService = {
@@ -23,20 +36,24 @@ export const ChatService = {
     const token = localStorage.getItem('token')
     if (!token) throw new Error('未登录')
 
+    const body: Record<string, unknown> = {
+      content,
+      conversationId,
+      model: config.model,
+      thinking: config.thinking,
+      webSearch: config.webSearch,
+      attachments,
+    }
+    const mcpServers = readMcpServers()
+    if (mcpServers) body.mcpServers = mcpServers
+
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        content,
-        conversationId,
-        model: config.model,
-        thinking: config.thinking,
-        webSearch: config.webSearch,
-        attachments,
-      }),
+      body: JSON.stringify(body),
       signal,
     })
 
@@ -86,7 +103,7 @@ export const ChatService = {
                 callbacks?.onToolResult?.(parsed.id, parsed.result)
                 break
               case 'complete':
-                callbacks?.onComplete?.(parsed.messageId, parsed.conversationId)
+                callbacks?.onComplete?.(parsed.messageId, parsed.conversationId, parsed.userMessageId)
                 break
               case 'title':
                 callbacks?.onTitle?.(parsed.conversationId, parsed.title)

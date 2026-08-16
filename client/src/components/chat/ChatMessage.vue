@@ -1,19 +1,52 @@
 <script setup lang="ts">
+import { nextTick, ref } from 'vue'
 import type { Message, MessageState } from '@/types/chat'
+import { useChatStore } from '@/stores/chat'
 import MessageContent from './MessageContent.vue'
 import MessageActions from './MessageActions.vue'
 import ThinkingPanel from './ThinkingPanel.vue'
 
-defineProps<{
+const props = defineProps<{
   message: Message
   state: MessageState
   isStreaming: boolean
 }>()
+
+const chatStore = useChatStore()
+
+// 用户消息悬停态（控制编辑按钮的显隐）
+const hovered = ref(false)
+// 行内编辑
+const editContent = ref('')
+const saving = ref(false)
+const editInputRef = ref<{ focus: () => void } | null>(null)
+
+function beginEdit() {
+  editContent.value = props.message.content
+  chatStore.startEdit(props.message.id)
+  nextTick(() => editInputRef.value?.focus())
+}
+
+async function handleSaveEdit() {
+  if (saving.value || !editContent.value.trim()) return
+  saving.value = true
+  try {
+    await chatStore.editUserMessage(props.message.id, editContent.value)
+  } finally {
+    saving.value = false
+  }
+}
+
+// mcp__server__tool 显示为 server · tool，普通工具名原样展示
+function prettyToolName(name: string): string {
+  if (!name.startsWith('mcp__')) return name
+  return name.slice(5).split('__').join(' · ')
+}
 </script>
 
 <template>
   <!-- User message -->
-  <div v-if="message.role === 'user'" :style="{ width: '100%', padding: '16px 0' }">
+  <div v-if="message.role === 'user'" :style="{ width: '100%', padding: '16px 0' }" @mouseenter="hovered = true" @mouseleave="hovered = false">
     <div :style="{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: '8px' }">
       <div :style="{ maxWidth: '70%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }">
         <!-- File attachments -->
@@ -30,10 +63,56 @@ defineProps<{
             </div>
           </template>
         </div>
-        <!-- Message content -->
-        <div :style="{ borderRadius: '24px', background: 'var(--message-user-bg)', padding: '12px 20px', color: 'var(--text-primary)' }">
-          <p :style="{ fontSize: '15px', lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }">{{ message.content }}</p>
+        <!-- 行内编辑模式 -->
+        <div v-if="chatStore.editingMessageId === message.id" :style="{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }">
+          <el-input
+            ref="editInputRef"
+            v-model="editContent"
+            type="textarea"
+            :autosize="{ minRows: 2 }"
+            :maxlength="32000"
+            :disabled="saving"
+            :style="{ width: '100%' }"
+            @keydown.esc="chatStore.cancelEdit()"
+          />
+          <div :style="{ display: 'flex', gap: '8px' }">
+            <el-button size="small" :disabled="saving" @click="chatStore.cancelEdit()">取消</el-button>
+            <el-button size="small" type="primary" :loading="saving" :disabled="!editContent.trim()" @click="handleSaveEdit">保存并发送</el-button>
+          </div>
         </div>
+        <!-- 普通模式：消息气泡 + 悬停操作 -->
+        <template v-else>
+          <div :style="{ borderRadius: '24px', background: 'var(--message-user-bg)', padding: '12px 20px', color: 'var(--text-primary)' }">
+            <p :style="{ fontSize: '15px', lineHeight: 1.75, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }">{{ message.content }}</p>
+          </div>
+          <!-- 悬停操作行（流式期间隐藏） -->
+          <div
+            v-if="!chatStore.streaming"
+            :style="{ display: 'flex', gap: '4px', opacity: hovered ? 1 : 0, pointerEvents: hovered ? 'auto' : 'none', transition: 'opacity 0.15s' }"
+          >
+            <button
+              title="编辑"
+              :style="{
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--text-tertiary)',
+                transition: 'background 0.15s',
+              }"
+              @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-bg)'"
+              @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+              @click="beginEdit"
+            >
+              <el-icon :size="14"><Edit /></el-icon>
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -55,7 +134,7 @@ defineProps<{
         <div v-for="[id, tool] in state.activeTools" :key="id" :style="{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', padding: '8px 12px', borderRadius: '8px', background: 'var(--input-bg)', color: 'var(--text-secondary)', cursor: 'default', userSelect: 'none' }">
           <el-icon v-if="tool.state === 'running'" class="is-loading" :size="14"><Loading /></el-icon>
           <el-icon v-else :size="14" style="color:var(--accent-green)"><Check /></el-icon>
-          <span>{{ tool.name }}</span>
+          <span>{{ prettyToolName(tool.name) }}</span>
         </div>
       </div>
 

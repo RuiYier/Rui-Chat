@@ -97,6 +97,29 @@ async function handleCopy() {
       <el-icon :size="14"><CopyDocument /></el-icon>
     </button>
 
+    <!-- Regenerate -->
+    <button
+      title="重新生成"
+      :style="{
+        width: '28px',
+        height: '28px',
+        borderRadius: '6px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        color: 'var(--text-tertiary)',
+        transition: 'background 0.15s',
+      }"
+      @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-bg)'"
+      @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+      @click="chatStore.regenerateMessage(props.message.id)"
+    >
+      <el-icon :size="14"><RefreshRight /></el-icon>
+    </button>
+
     <!-- TTS - direct play with selected voice -->
     <button
       v-if="authStore.features.tts"
