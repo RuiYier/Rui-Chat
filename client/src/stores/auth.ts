@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { AuthService } from '@/services/auth.service'
-import type { User } from '@/types/user'
+import type { User, UserFeatures } from '@/types/user'
+
+const defaultFeatures: UserFeatures = { voiceInput: true, webSearch: true, tts: true }
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -58,6 +60,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const isAuthenticated = computed(() => !!user.value)
+  const isAdmin = computed(() => user.value?.role === 'admin')
+  const features = computed<UserFeatures>(() => ({
+    ...defaultFeatures,
+    ...(user.value?.features || {}),
+  }))
 
-  return { user, loading, error, fetchUser, login, register, logout, isAuthenticated }
+  return { user, loading, error, fetchUser, login, register, logout, isAuthenticated, isAdmin, features }
 })

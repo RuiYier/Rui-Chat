@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { AuthService } from '@/services/auth.service'
+import { useAuthStore } from '@/stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,6 +23,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/views/admin/Admin.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
       path: '/share/:token',
       name: 'share',
       component: () => import('@/views/Share.vue'),
@@ -34,9 +41,27 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.requiresAuth && !AuthService.isAuthenticated()) {
     return { name: 'landing' }
+  }
+
+  if (to.meta.requiresAdmin) {
+    if (!AuthService.isAuthenticated()) {
+      return { path: '/' }
+    }
+    const authStore = useAuthStore()
+    if (!authStore.user) {
+      try {
+        await authStore.fetchUser()
+      } catch {
+        return { path: '/' }
+      }
+      if (!authStore.user) return { path: '/' }
+    }
+    if (authStore.user?.role !== 'admin') {
+      return { path: '/chat' }
+    }
   }
 })
 

@@ -52,6 +52,11 @@ async function handleLogout() {
   router.push('/')
 }
 
+function goAdmin() {
+  showUserMenu.value = false
+  router.push('/admin')
+}
+
 function cycleTheme() {
   document.documentElement.classList.toggle('dark')
   localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')
@@ -136,6 +141,11 @@ onUnmounted(() => document.removeEventListener('click', closeMenus))
           <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', color: 'var(--text-primary)' }" @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-hover)'" @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'" @click="cycleTheme">
             <el-icon :size="14"><Sunny /></el-icon>
             <span>切换主题</span>
+          </div>
+          <!-- Admin panel -->
+          <div v-if="authStore.isAdmin" :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', color: 'var(--text-primary)' }" @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-hover)'" @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'" @click="goAdmin">
+            <el-icon :size="14"><Setting /></el-icon>
+            <span>管理后台</span>
           </div>
           <!-- Logout -->
           <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', color: 'var(--accent-red)' }" @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-hover)'" @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'" @click="handleLogout">
