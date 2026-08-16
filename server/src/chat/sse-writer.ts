@@ -64,9 +64,10 @@ export class SSEWriter {
    * 发送流完成信号
    * @param messageId 助手消息 ID
    * @param conversationId 会话 ID（新会话时返回）
+   * @param userMessageId 用户消息 ID（可选，便于客户端对齐消息）
    */
-  sendComplete(messageId: string, conversationId?: string) {
-    this.send({ type: 'complete', messageId, conversationId })
+  sendComplete(messageId: string, conversationId?: string, userMessageId?: string) {
+    this.send({ type: 'complete', messageId, conversationId, userMessageId })
   }
 
   /**

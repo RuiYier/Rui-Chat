@@ -14,7 +14,7 @@ export class MessageService {
 
     return this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ seq: 'asc' }],
     })
   }
 

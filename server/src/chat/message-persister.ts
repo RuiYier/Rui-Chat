@@ -122,7 +122,7 @@ export class MessagePersister {
   async getMessageHistory(conversationId: string, limit: number = 50) {
     return this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ seq: 'asc' }],
       take: limit,
       select: { role: true, content: true, thinking: true },
     })
