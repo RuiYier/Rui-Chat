@@ -6,3 +6,5 @@ dist
 *.tsbuildinfo
 *.d.ts
 CLAUDE.md
+.claude
+.zcode

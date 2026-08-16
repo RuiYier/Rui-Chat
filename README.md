@@ -1,6 +1,6 @@
 # Rui Chat
 
-基于小米 MiMo 大模型的智能对话助手，使用 Vue 3 + NestJS 架构。支持语音输入、语音合成、图片识别 、深度思考过程、对话分享导出等。
+支持多供应商（OpenAI 兼容协议，后台可配）的智能对话助手，使用 Vue 3 + NestJS 架构。支持语音输入、流式语音合成、图片识别、深度思考过程、AI 自动标题、后台管理、对话分享导出等。
 
 ![Chat interface](docs/chat-interface.jpg)
 
@@ -27,17 +27,17 @@
 
 ### AI 模型
 
-- **MiMo-V2.5-Pro**: 旗舰推理模型
-- **MiMo-V2.5**: 通用对话模型
-- **MiMo-V2.5-ASR**: 语音识别
-- **MiMo-V2.5-TTS**: 语音合成（9种内置音色）
+- **对话模型**: 后台管理配置，支持任意 OpenAI 兼容协议供应商（Base URL + API Key + 模型ID）；未配置时回退到 `.env` 中的 MiMo（mimo-v2.5-pro / mimo-v2.5）
+- **MiMo-V2.5-ASR**: 语音识别（固定 MiMo）
+- **MiMo-V2.5-TTS**: 流式语音合成（固定 MiMo，9种内置音色）
 
 ## 功能
 
 ### 对话
 
 - 流式响应 (SSE)
-- 多模型切换 (mimo-v2.5-pro / mimo-v2.5)
+- 模型切换（列表由后台配置，服务端 `/api/models` 下发）
+- AI 自动标题（发送首条消息时先用用户输入前30字作标题，回复完成后 AI 生成15字以内标题并实时推送更新）
 - 深度思考模式 (推理过程可视化)
 - 会话管理 (创建/删除/重命名/置顶)
 - 消息操作 (复制/朗读)
@@ -45,7 +45,7 @@
 ### 语音
 
 - 语音输入 (mimo-v2.5-asr)
-- 语音输出 (mimo-v2.5-tts，9种音色)
+- 流式语音输出 (mimo-v2.5-tts，9种音色，边合成边播放，可随时停止)
 - 语音选择持久化
 
 ### 文件
@@ -108,7 +108,7 @@ GOOGLE_CLIENT_SECRET=""
 GITHUB_CLIENT_ID=""
 GITHUB_CLIENT_SECRET=""
 
-# Mimo API
+# Mimo API（对话模型未在后台配置时的兜底；TTS/语音识别始终使用此配置）
 MIMO_API_KEY="your-api-key"
 MIMO_BASE_URL="https://token-plan-cn.xiaomimimo.com/v1"
 
