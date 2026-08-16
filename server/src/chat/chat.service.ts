@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { SettingsService } from '../settings/settings.service'
 import { AiService } from './ai.service'
+import { ProviderConfigService } from './provider-config.service'
 import { SSEWriter } from './sse-writer'
 import { MessagePersister } from './message-persister'
 import { buildContextMessages } from './prompt.builder'
@@ -18,6 +19,7 @@ export class ChatService {
     private configService: ConfigService,
     private toolRegistry: ToolRegistry,
     private settingsService: SettingsService,
+    private providerConfigService: ProviderConfigService,
   ) {}
 
   async handleChatRequest(
@@ -49,11 +51,17 @@ export class ChatService {
       const settings = await this.settingsService.getSettings()
       const webSearchEnabled = settings.enableWebSearch && !!webSearch
 
+      // 解析聊天模型（数据库配置优先，回退到环境变量 MiMo），每个请求只解析一次
+      const { baseUrl, apiKey, model: resolvedModel } = await this.providerConfigService.resolveChatModel(model)
+
       // 获取或创建会话
       const conversationId = await this.getOrCreateConversation(userId, existingConvId)
 
       // 验证会话所有权
       await this.verifyConversationOwnership(conversationId, userId)
+
+      // 判断是否为会话首条消息（持久化用户消息后总数 <= 1，即此前无任何消息）
+      const isFirstMessage = (await this.prisma.message.count({ where: { conversationId } })) === 0
 
       // 保存用户消息和创建助手消息占位
       const { userMessage, assistantMessage } = await this.saveMessages(
@@ -62,18 +70,25 @@ export class ChatService {
         attachments,
       )
 
-      // 获取历史记录并构建上下文
-      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearchEnabled)
-
       // 设置持久化器
       const persister = new MessagePersister(this.prisma)
+
+      // 阶段 A：首条消息立即以用户输入（截断 30 字）作为临时标题，避免列表长时间显示"新对话"
+      if (isFirstMessage) {
+        await persister.setTitleIfDefault(conversationId, content.slice(0, 30).replace(/\n/g, ' '))
+      }
+
+      // 获取历史记录并构建上下文
+      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearchEnabled)
 
       // 确定可用工具
       const tools = this.getAvailableTools(webSearchEnabled)
 
       // 处理流式响应
       await handleStream(this.aiService, persister, this.toolRegistry, sseWriter, assistantMessage.id, {
-        model,
+        model: resolvedModel,
+        baseUrl,
+        apiKey,
         messages: contextMessages,
         tools,
         enableThinking: thinking,

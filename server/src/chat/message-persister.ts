@@ -100,6 +100,20 @@ export class MessagePersister {
   }
 
   /**
+   * 若会话标题仍为默认值“新对话”则更新（用于首条消息的即时标题）
+   * @param conversationId 会话 ID
+   * @param title 新的会话标题
+   */
+  async setTitleIfDefault(conversationId: string, title: string) {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    await this.prisma.conversation.updateMany({
+      where: { id: conversationId, title: '新对话' },
+      data: { title: trimmed },
+    })
+  }
+
+  /**
    * 获取消息历史
    * @param conversationId 会话 ID
    * @param limit 返回消息数量限制
@@ -112,5 +126,13 @@ export class MessagePersister {
       take: limit,
       select: { role: true, content: true, thinking: true },
     })
+  }
+
+  /**
+   * 统计会话消息总数（用于判断是否为首个回合）
+   * @param conversationId 会话 ID
+   */
+  async countMessages(conversationId: string): Promise<number> {
+    return this.prisma.message.count({ where: { conversationId } })
   }
 }

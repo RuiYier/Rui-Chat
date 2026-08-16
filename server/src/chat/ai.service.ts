@@ -16,6 +16,8 @@ export interface ChatCompletionOptions {
   enableThinking?: boolean
   audio?: { format: string; voice?: string; [key: string]: any }
   asr_options?: { language?: string }
+  baseUrl?: string
+  apiKey?: string
 }
 
 @Injectable()
@@ -29,7 +31,10 @@ export class AiService {
   }
 
   async chatCompletion(options: ChatCompletionOptions): Promise<Response> {
-    const url = `${this.baseUrl}/chat/completions`
+    // 允许调用方覆盖接口地址与密钥（用于管理员配置的供应商），默认使用环境变量中的 MiMo
+    const baseUrl = options.baseUrl ?? this.baseUrl
+    const apiKey = options.apiKey ?? this.apiKey
+    const url = `${baseUrl}/chat/completions`
 
     const body: any = {
       model: options.model,
@@ -54,7 +59,7 @@ export class AiService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -121,5 +126,27 @@ export class AiService {
     if (!audioData) throw new Error('No audio data in TTS response')
 
     return Buffer.from(audioData, 'base64')
+  }
+
+  async textToSpeechStream(
+    text: string,
+    voice: string = 'mimo_default',
+    styleInstruction?: string,
+  ): Promise<Response> {
+    const messages: ChatMessage[] = []
+
+    if (styleInstruction) {
+      messages.push({ role: 'user', content: styleInstruction })
+    }
+
+    messages.push({ role: 'assistant', content: text })
+
+    // 始终使用环境变量配置的 MiMo 供应商，不使用管理员配置的供应商
+    return this.chatCompletion({
+      model: 'mimo-v2.5-tts',
+      messages,
+      stream: true,
+      audio: { format: 'pcm16', voice },
+    })
   }
 }

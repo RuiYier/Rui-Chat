@@ -70,6 +70,15 @@ export class SSEWriter {
   }
 
   /**
+   * 发送 AI 生成的会话标题
+   * @param conversationId 会话 ID
+   * @param title 新生成的会话标题
+   */
+  sendTitle(conversationId: string, title: string) {
+    this.send({ type: 'title', conversationId, title })
+  }
+
+  /**
    * 发送错误信息并关闭连接
    * @param message 错误描述
    */

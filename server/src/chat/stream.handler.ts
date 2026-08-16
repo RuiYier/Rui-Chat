@@ -6,6 +6,8 @@ import { ToolHandler } from '../tools/tool-handler'
 
 export interface StreamOptions {
   model: string
+  baseUrl?: string
+  apiKey?: string
   messages: any[]
   tools?: any[]
   temperature?: number
@@ -49,8 +51,12 @@ export async function handleStream(
       requestBody.tools = toolDefinitions
     }
 
-    // Call AI API
-    const response = await aiService.chatCompletion(requestBody)
+    // Call AI API (baseUrl/apiKey 仅作为调用参数传入，不进入上游请求体)
+    const response = await aiService.chatCompletion({
+      ...requestBody,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey,
+    })
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -205,15 +211,78 @@ export async function handleStream(
     await persister.updateMessageContent(assistantMessageId, fullContent)
   }
 
-  // Auto-generate title from first message
-  if (options.conversationId && fullContent) {
-    const history = await persister.getMessageHistory(options.conversationId, 2)
-    if (history.length <= 2) {
-      const title = fullContent.slice(0, 50).replace(/\n/g, ' ')
-      await persister.updateConversationTitle(options.conversationId, title)
+  // 先发送完成信号，让客户端立即停止加载动画，再进行标题生成
+  sseWriter.sendComplete(assistantMessageId, options.conversationId)
+
+  // 阶段 B：首个回合完成后用 AI 生成精简标题（任何异常都不允许影响流）
+  try {
+    if (options.conversationId && fullContent) {
+      // getMessageHistory 带 take 限制无法判断回合数，需以消息总数判断是否为首回合
+      const messageCount = await persister.countMessages(options.conversationId)
+      if (messageCount <= 2) {
+        const history = await persister.getMessageHistory(options.conversationId, 2)
+        const firstUserMessage = history.find(m => m.role === 'user')?.content || ''
+        const title = await generateConversationTitle(aiService, options, firstUserMessage, fullContent)
+        if (title) {
+          await persister.updateConversationTitle(options.conversationId, title)
+          sseWriter.sendTitle(options.conversationId, title)
+        }
+      }
     }
+  } catch (err) {
+    console.error('[Title] Failed to generate conversation title:', err)
   }
 
-  sseWriter.sendComplete(assistantMessageId, options.conversationId)
   sseWriter.close()
+}
+
+/**
+ * 用 AI 为首个回合生成简短会话标题
+ * 任何失败（网络错误、非 2xx、空结果）都回退到用户输入的截断标题
+ */
+async function generateConversationTitle(
+  aiService: AiService,
+  options: { model: string; baseUrl?: string; apiKey?: string },
+  firstUserMessage: string,
+  assistantContent: string,
+): Promise<string> {
+  const fallback = firstUserMessage.slice(0, 30).replace(/\n/g, ' ')
+
+  try {
+    const response = await aiService.chatCompletion({
+      model: options.model,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey,
+      stream: false,
+      max_tokens: 50,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'system',
+          content: '你是一个对话标题生成器。根据用户的问题和AI的回答，生成一个简短的标题（15字以内）。只输出标题本身，不要包含引号或任何其他内容。',
+        },
+        {
+          role: 'user',
+          content: `用户问题：${firstUserMessage}\n\nAI回答：${assistantContent.slice(0, 500)}`,
+        },
+      ],
+    })
+
+    if (!response.ok) return fallback
+
+    const data = await response.json()
+    const raw = data.choices?.[0]?.message?.content
+    if (typeof raw !== 'string') return fallback
+
+    const title = raw
+      .trim()
+      .replace(/^[「」『』“”‘'"]+|[「」『』“”‘'"]+$/g, '')
+      .replace(/\s+/g, ' ')
+      .slice(0, 30)
+      .trim()
+
+    return title || fallback
+  } catch {
+    return fallback
+  }
 }
