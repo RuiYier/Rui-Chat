@@ -41,7 +41,7 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   googleCallback(@Req() req: any, @Res() res: any) {
     const token = this.authService.generateTokenForUser(req.user.id)
-    const clientUrl = this.configService.get('VITE_API_BASE_URL', 'http://localhost:5173')
+    const clientUrl = this.configService.get('CLIENT_URL', '') || this.configService.get('VITE_API_BASE_URL', '') || 'http://localhost:5173'
     // 使用 fragment 替代 query parameter，避免 token 出现在浏览器历史记录和服务器日志中
     res.redirect(`${clientUrl}/auth/callback#token=${token}`)
   }
@@ -56,7 +56,7 @@ export class AuthController {
   @UseGuards(AuthGuard('github'))
   githubCallback(@Req() req: any, @Res() res: any) {
     const token = this.authService.generateTokenForUser(req.user.id)
-    const clientUrl = this.configService.get('VITE_API_BASE_URL', 'http://localhost:5173')
+    const clientUrl = this.configService.get('CLIENT_URL', '') || this.configService.get('VITE_API_BASE_URL', '') || 'http://localhost:5173'
     // 使用 fragment 替代 query parameter，避免 token 出现在浏览器历史记录和服务器日志中
     res.redirect(`${clientUrl}/auth/callback#token=${token}`)
   }

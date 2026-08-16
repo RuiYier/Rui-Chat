@@ -8,7 +8,9 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 onMounted(async () => {
-  const token = route.query.token as string
+  // Server redirects with the token in the URL fragment (#token=...), fall back to query
+  const hash = route.hash.startsWith('#') ? route.hash.slice(1) : ''
+  const token = new URLSearchParams(hash).get('token') || (route.query.token as string)
   if (token) {
     localStorage.setItem('token', token)
     await authStore.fetchUser()

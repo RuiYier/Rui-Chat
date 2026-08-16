@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LoginDialog from '@/components/auth/LoginDialog.vue'
@@ -11,16 +11,27 @@ const showLogin = ref(false)
 const inputValue = ref('')
 const landingInputRef = ref<HTMLInputElement | null>(null)
 
-if (authStore.isAuthenticated) {
-  router.replace('/chat')
-}
+// React to authentication state so a hard refresh on '/' with a valid token
+// still redirects once App.vue's fetchUser() resolves
+watch(
+  () => authStore.isAuthenticated,
+  (v) => {
+    if (v) router.replace('/chat')
+  },
+  { immediate: true },
+)
 
 function onLoginSuccess() {
   showLogin.value = false
-  // Check if there's a pending message from before login
-  const pendingMsg = localStorage.getItem('pendingMessage')
-  if (pendingMsg) {
-    router.push('/chat')
+  // Always enter the chat after login (pendingMessage flow also lands on /chat)
+  router.push('/chat')
+}
+
+function onDialogClose(val: boolean) {
+  showLogin.value = val
+  if (!val) {
+    // Dialog closed without a successful login: discard the stale pending message
+    localStorage.removeItem('pendingMessage')
   }
 }
 
@@ -234,7 +245,7 @@ function handleSend() {
       </div>
     </div>
 
-    <LoginDialog v-model="showLogin" @success="onLoginSuccess" />
+    <LoginDialog :model-value="showLogin" @update:model-value="onDialogClose" @success="onLoginSuccess" />
     <LandingTutorial />
   </div>
 </template>
