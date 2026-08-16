@@ -39,3 +39,30 @@ export interface AdminSettings {
   enableTts: boolean
   allowRegistration: boolean
 }
+
+export interface McpTool {
+  name: string
+  description: string
+}
+
+export interface McpServer {
+  id: string
+  name: string
+  transport: 'stdio' | 'http'
+  command: string | null
+  args: string[] | null
+  url: string | null
+  headersMasked: Record<string, string> | null
+  isEnabled: boolean
+  status: 'connected' | 'error' | 'disabled'
+  statusMessage: string | null
+  toolCount: number
+  tools: McpTool[]
+  createdAt: string
+}
+
+export interface McpTestResult {
+  ok: boolean
+  message: string
+  tools: McpTool[]
+}

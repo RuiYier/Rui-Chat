@@ -5,6 +5,7 @@ import { AdminService } from '@/services/admin.service'
 import AdminUsers from '@/components/admin/AdminUsers.vue'
 import AdminProviders from '@/components/admin/AdminProviders.vue'
 import AdminSettings from '@/components/admin/AdminSettings.vue'
+import AdminMcp from '@/components/admin/AdminMcp.vue'
 import type { AdminStats } from '@/types/admin'
 
 const router = useRouter()
@@ -83,6 +84,9 @@ onMounted(async () => {
         </el-tab-pane>
         <el-tab-pane label="系统设置" name="settings">
           <AdminSettings />
+        </el-tab-pane>
+        <el-tab-pane label="MCP 服务" name="mcp">
+          <AdminMcp />
         </el-tab-pane>
       </el-tabs>
     </div>

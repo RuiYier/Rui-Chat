@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
 import { UploadService } from '@/services/upload.service'
 import { VoiceService } from '@/services/voice.service'
+import { McpService } from '@/services/mcp.service'
+import type { McpServerInfo } from '@/services/mcp.service'
 import { ElMessage } from 'element-plus'
 import { VOICES } from '@/constants/voices'
 
@@ -108,6 +110,56 @@ function stopRecording() {
 }
 
 function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value = false }
+
+// ===== MCP 工具选择 =====
+const MCP_STORAGE_KEY = 'mcpSelectedServers'
+const mcpServers = ref<McpServerInfo[]>([])
+const selectedServers = ref<string[]>([])
+const showMcpMenu = ref(false)
+const mcpWrapRef = ref<HTMLElement | null>(null)
+const mcpActive = computed(() => selectedServers.value.length > 0)
+
+async function loadMcpServers() {
+  try {
+    mcpServers.value = await McpService.getServers()
+  } catch {
+    // MCP 服务不可用时不展示入口
+    return
+  }
+  const names = mcpServers.value.map(s => s.name)
+  let stored: string[] | null = null
+  try {
+    const raw = localStorage.getItem(MCP_STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    if (Array.isArray(parsed) && parsed.every(v => typeof v === 'string')) stored = parsed
+  } catch {
+    stored = null
+  }
+  // 未存储或包含已不可用的服务器时，默认全选
+  selectedServers.value = stored && stored.every(n => names.includes(n)) ? stored : [...names]
+}
+
+function persistMcpSelection() {
+  localStorage.setItem(MCP_STORAGE_KEY, JSON.stringify(selectedServers.value))
+}
+
+watch(selectedServers, persistMcpSelection)
+
+function selectAllMcp() { selectedServers.value = mcpServers.value.map(s => s.name) }
+function clearMcp() { selectedServers.value = [] }
+
+function onDocClick(e: MouseEvent) {
+  if (showMcpMenu.value && mcpWrapRef.value && !mcpWrapRef.value.contains(e.target as Node)) showMcpMenu.value = false
+}
+
+onMounted(() => {
+  loadMcpServers()
+  document.addEventListener('click', onDocClick)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onDocClick)
+})
 </script>
 
 <template>
@@ -181,6 +233,38 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
             <button v-if="authStore.features.webSearch" :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: chatStore.config.webSearch ? '#3B82F6' : 'transparent', color: chatStore.config.webSearch ? '#fff' : 'var(--text-tertiary)' }" @click="chatStore.toggleWebSearch()">
               <el-icon :size="18"><Search /></el-icon>
             </button>
+
+            <!-- MCP tools -->
+            <div v-if="mcpServers.length > 0" ref="mcpWrapRef" style="position:relative">
+              <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: mcpActive ? '#3B82F6' : 'transparent', color: mcpActive ? '#fff' : 'var(--text-tertiary)' }" title="MCP 工具" @click="showMcpMenu = !showMcpMenu">
+                <el-icon :size="18"><SetUp /></el-icon>
+              </button>
+              <div v-if="showMcpMenu" :style="{ position: 'absolute', bottom: '100%', left: 0, marginBottom: '4px', width: '264px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50, overflow: 'hidden' }">
+                <div :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: '1px solid var(--border)' }">
+                  <span :style="{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }">MCP 工具</span>
+                  <div :style="{ display: 'flex', gap: '10px' }">
+                    <span :style="{ fontSize: '12px', color: '#3B82F6', cursor: 'pointer' }" @click="selectAllMcp">全选</span>
+                    <span :style="{ fontSize: '12px', color: 'var(--text-tertiary)', cursor: 'pointer' }" @click="clearMcp">清空</span>
+                  </div>
+                </div>
+                <div :style="{ padding: '4px 0', maxHeight: '30vh', overflowY: 'auto' }">
+                  <div v-for="server in mcpServers" :key="server.name" :style="{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '4px 12px' }">
+                    <el-checkbox v-model="selectedServers" :value="server.name">
+                      <span :style="{ fontSize: '14px' }">{{ server.name }}</span>
+                    </el-checkbox>
+                    <el-tooltip v-if="server.tools?.length" placement="top">
+                      <template #content>
+                        <div :style="{ maxHeight: '200px', overflowY: 'auto', lineHeight: '1.6' }">
+                          <div v-for="tool in server.tools" :key="tool.name">{{ tool.name }}</div>
+                        </div>
+                      </template>
+                      <span :style="{ fontSize: '12px', color: 'var(--text-tertiary)', cursor: 'default', whiteSpace: 'nowrap' }">{{ server.toolCount }} 个工具</span>
+                    </el-tooltip>
+                    <span v-else :style="{ fontSize: '12px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }">{{ server.toolCount }} 个工具</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Mic -->
             <button v-if="authStore.features.voiceInput" :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: isRecording ? 'var(--accent-red)' : 'transparent', color: isRecording ? '#fff' : 'var(--text-tertiary)' }" @click="toggleRecording">

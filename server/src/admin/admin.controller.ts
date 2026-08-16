@@ -11,6 +11,7 @@ import { CreateModelDto } from './dto/create-model.dto'
 import { UpdateModelDto } from './dto/update-model.dto'
 import { UpdateSettingsDto } from './dto/update-settings.dto'
 import { CreateMcpServerDto } from './dto/create-mcp-server.dto'
+import { TestMcpServerDto } from './dto/test-mcp-server.dto'
 import { UpdateMcpServerDto } from './dto/update-mcp-server.dto'
 
 @Controller('admin')
@@ -103,6 +104,11 @@ export class AdminController {
   @Post('mcp')
   createMcpServer(@Body() dto: CreateMcpServerDto) {
     return this.adminService.createMcpServer(dto)
+  }
+
+  @Post('mcp/test')
+  testMcpServer(@Body() dto: TestMcpServerDto) {
+    return this.adminService.testMcpServer(dto)
   }
 
   @Patch('mcp/:id')

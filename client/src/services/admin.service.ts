@@ -1,5 +1,15 @@
 import api from './api'
-import type { AdminSettings, AdminStats, AdminUser, Provider, ProviderModel } from '@/types/admin'
+import type { AdminSettings, AdminStats, AdminUser, McpServer, McpTestResult, Provider, ProviderModel } from '@/types/admin'
+
+export interface McpServerBody {
+  name?: string
+  transport: 'stdio' | 'http'
+  command?: string
+  args?: string[]
+  url?: string
+  headers?: Record<string, string>
+  isEnabled?: boolean
+}
 
 export const AdminService = {
   async getStats(): Promise<AdminStats> {
@@ -66,6 +76,30 @@ export const AdminService = {
 
   async updateSettings(body: Partial<AdminSettings>): Promise<AdminSettings> {
     const { data } = await api.patch('/admin/settings', body)
+    return data
+  },
+
+  async getMcpServers(): Promise<McpServer[]> {
+    const { data } = await api.get('/admin/mcp')
+    return data
+  },
+
+  async createMcpServer(body: McpServerBody): Promise<McpServer> {
+    const { data } = await api.post('/admin/mcp', body)
+    return data
+  },
+
+  async updateMcpServer(id: string, body: McpServerBody): Promise<McpServer> {
+    const { data } = await api.patch(`/admin/mcp/${id}`, body)
+    return data
+  },
+
+  async deleteMcpServer(id: string): Promise<void> {
+    await api.delete(`/admin/mcp/${id}`)
+  },
+
+  async testMcpServer(body: Omit<McpServerBody, 'name' | 'isEnabled'>): Promise<McpTestResult> {
+    const { data } = await api.post('/admin/mcp/test', body)
     return data
   },
 }

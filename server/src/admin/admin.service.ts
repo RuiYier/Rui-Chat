@@ -10,6 +10,7 @@ import { CreateModelDto } from './dto/create-model.dto'
 import { UpdateModelDto } from './dto/update-model.dto'
 import { CreateMcpServerDto } from './dto/create-mcp-server.dto'
 import { UpdateMcpServerDto } from './dto/update-mcp-server.dto'
+import { TestMcpServerDto } from './dto/test-mcp-server.dto'
 import { Model, Provider, McpServer } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
@@ -352,6 +353,11 @@ export class AdminService {
 
     await this.syncWithTimeout(server)
     return this.toMcpServerDto(server)
+  }
+
+  async testMcpServer(dto: TestMcpServerDto) {
+    this.validateMcpConfig(dto)
+    return this.mcpService.testConnection(dto)
   }
 
   async updateMcpServer(id: string, dto: UpdateMcpServerDto) {
