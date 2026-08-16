@@ -36,4 +36,32 @@ export const VoiceService = {
 
     return response.blob()
   },
+
+  /**
+   * 流式语音合成: 返回原始 PCM16 LE 单声道 24kHz 二进制流
+   */
+  async textToSpeechStream(
+    text: string,
+    voice?: string,
+    style?: string,
+    signal?: AbortSignal,
+  ): Promise<ReadableStream<Uint8Array>> {
+    const token = localStorage.getItem('token')
+    const response = await fetch('/api/voice/tts/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ text, voice, style }),
+      signal,
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null)
+      throw new Error(error?.message || '语音播放失败')
+    }
+
+    return response.body!
+  },
 }

@@ -1,45 +1,75 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { VoiceService } from '@/services/voice.service'
+import { PCMPlayer } from '@/utils/pcm-player'
+import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import type { Message } from '@/types/chat'
 
 const props = defineProps<{ message: Message }>()
 const chatStore = useChatStore()
+const authStore = useAuthStore()
 const playing = ref(false)
+
+let player: PCMPlayer | null = null
+let abortController: AbortController | null = null
+
+function stopPlayback() {
+  abortController?.abort()
+  abortController = null
+  player?.stop()
+  player = null
+  playing.value = false
+}
+
+async function handleReadAloud() {
+  // 再次点击停止播放
+  if (playing.value) {
+    stopPlayback()
+    return
+  }
+
+  playing.value = true
+  const controller = new AbortController()
+  abortController = controller
+  const pcmPlayer = new PCMPlayer()
+  player = pcmPlayer
+  pcmPlayer.onEnded = () => {
+    player = null
+    abortController = null
+    playing.value = false
+  }
+
+  try {
+    const stream = await VoiceService.textToSpeechStream(
+      props.message.content,
+      chatStore.selectedVoice,
+      undefined,
+      controller.signal,
+    )
+    const reader = stream.getReader()
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      if (value) pcmPlayer.append(value)
+    }
+    pcmPlayer.end()
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') {
+      ElMessage.error(err?.message || '语音播放失败')
+    }
+    stopPlayback()
+  }
+}
+
+onBeforeUnmount(stopPlayback)
 
 async function handleCopy() {
   try {
     await navigator.clipboard.writeText(props.message.content)
     ElMessage.success('已复制')
   } catch {}
-}
-
-async function handleReadAloud() {
-  if (playing.value) return
-  playing.value = true
-  try {
-    const blob = await VoiceService.textToSpeech(
-      props.message.content,
-      chatStore.selectedVoice,
-    )
-    const url = URL.createObjectURL(blob)
-    const audio = new Audio(url)
-    audio.play()
-    audio.onended = () => {
-      URL.revokeObjectURL(url)
-      playing.value = false
-    }
-    audio.onerror = () => {
-      URL.revokeObjectURL(url)
-      playing.value = false
-      ElMessage.error('语音播放失败')
-    }
-  } catch {
-    playing.value = false
-    ElMessage.error('语音播放失败')
-  }
 }
 </script>
 
@@ -69,6 +99,7 @@ async function handleReadAloud() {
 
     <!-- TTS - direct play with selected voice -->
     <button
+      v-if="authStore.features.tts"
       :style="{
         width: '28px',
         height: '28px',
@@ -78,7 +109,7 @@ async function handleReadAloud() {
         justifyContent: 'center',
         border: 'none',
         background: 'transparent',
-        cursor: playing ? 'not-allowed' : 'pointer',
+        cursor: 'pointer',
         color: playing ? 'var(--ring)' : 'var(--text-tertiary)',
         transition: 'background 0.15s',
       }"
