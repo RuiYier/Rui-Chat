@@ -63,6 +63,13 @@
 
 - Web 搜索 (Tavily API)
 
+### 后台管理
+
+- 管理入口 `/admin`（首个注册用户自动成为管理员；存量数据库在服务启动时自动提权最早注册的用户）
+- 用户管理：增删改查、提权/降权、重置密码（不能操作自己的角色、不能删除最后一个管理员）
+- 供应商与模型管理：对话模型支持任意 OpenAI 兼容协议供应商（Base URL + API Key + 模型ID），数据库配置优先，`.env` 中的 MiMo 配置兜底；TTS/语音识别固定使用 MiMo，不在此管理
+- 系统设置（全局开关）：语音输入 / 联网搜索 / TTS / 开放注册，关闭后用户侧对应功能直接隐藏且接口返回 403
+
 ### 其他
 
 - 对话分享 (公开链接)
@@ -119,6 +126,9 @@ THROTTLE_LONG_LIMIT=100
 # App
 CORS_ORIGINS="http://localhost:5173"
 VITE_API_BASE_URL="http://localhost:3000"
+
+# OAuth 登录成功后回跳的前端地址（服务端读取，可选，默认 http://localhost:5173）
+CLIENT_URL="http://localhost:5173"
 ```
 
 #### 数据库
@@ -182,6 +192,8 @@ Rui-Chat/
 │   │   ├── export/            # 导出功能
 │   │   ├── share/             # 分享功能
 │   │   ├── user/              # 用户管理
+│   │   ├── admin/             # 后台管理 (用户/供应商/模型/设置)
+│   │   ├── settings/          # 系统设置 (功能开关)
 │   │   ├── prisma/            # 数据库服务
 │   │   └── common/            # 公共模块 (守卫/装饰器)
 │   └── prisma/                # 数据库模型
