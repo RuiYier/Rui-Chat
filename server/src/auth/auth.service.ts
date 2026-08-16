@@ -1,6 +1,7 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { PrismaService } from '../prisma/prisma.service'
+import { SettingsService } from '../settings/settings.service'
 import * as bcrypt from 'bcryptjs'
 
 @Injectable()
@@ -8,6 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private settingsService: SettingsService,
   ) {}
 
   async register(username: string, password: string, email?: string, name?: string) {
@@ -18,6 +20,15 @@ export class AuthService {
       throw new ConflictException('用户名或邮箱已存在')
     }
 
+    const userCount = await this.prisma.user.count()
+    // 首个用户注册始终允许并授予管理员，防止系统锁死
+    if (userCount > 0) {
+      const settings = await this.settingsService.getSettings()
+      if (!settings.allowRegistration) {
+        throw new ForbiddenException('注册已被管理员关闭')
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10)
     const user = await this.prisma.user.create({
       data: {
@@ -25,8 +36,9 @@ export class AuthService {
         password: hashedPassword,
         email: email || null,
         name: name || username,
+        role: userCount === 0 ? 'admin' : 'user',
       },
-      select: { id: true, username: true, email: true, name: true, image: true },
+      select: { id: true, username: true, email: true, name: true, image: true, role: true, createdAt: true },
     })
 
     return {
@@ -54,6 +66,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       image: user.image,
+      role: user.role,
     }
   }
 
@@ -89,6 +102,7 @@ export class AuthService {
         email: existingAccount.user.email,
         name: existingAccount.user.name,
         image: existingAccount.user.image,
+        role: existingAccount.user.role,
       }
     }
 
@@ -147,6 +161,7 @@ export class AuthService {
         email: user!.email,
         name: user!.name,
         image: user!.image,
+        role: user!.role,
       }
     })
 
@@ -154,10 +169,19 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, username: true, email: true, name: true, image: true, createdAt: true },
+      select: { id: true, username: true, email: true, name: true, image: true, role: true, createdAt: true },
     })
+    const settings = await this.settingsService.getSettings()
+    return {
+      ...user,
+      features: {
+        voiceInput: settings.enableVoiceInput,
+        webSearch: settings.enableWebSearch,
+        tts: settings.enableTts,
+      },
+    }
   }
 
   /**

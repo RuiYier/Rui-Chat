@@ -13,6 +13,8 @@ import { UploadModule } from './upload/upload.module'
 import { ShareModule } from './share/share.module'
 import { ExportModule } from './export/export.module'
 import { ToolsModule } from './tools/tools.module'
+import { SettingsModule } from './settings/settings.module'
+import { AdminModule } from './admin/admin.module'
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { ToolsModule } from './tools/tools.module'
     ShareModule,
     ExportModule,
     ToolsModule,
+    SettingsModule,
+    AdminModule,
   ],
   providers: [
     {

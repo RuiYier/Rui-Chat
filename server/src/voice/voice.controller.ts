@@ -1,13 +1,17 @@
-import { Controller, Post, Body, UseGuards, Res, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common'
+import { Controller, Post, Body, UseGuards, Res, UploadedFile, UseInterceptors, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { VoiceService } from './voice.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { SettingsService } from '../settings/settings.service'
 import { TextToSpeechDto } from './dto/tts.dto'
 import { Response } from 'express'
 
 @Controller('voice')
 export class VoiceController {
-  constructor(private voiceService: VoiceService) {}
+  constructor(
+    private voiceService: VoiceService,
+    private settingsService: SettingsService,
+  ) {}
 
   @Post('stt')
   @UseGuards(JwtAuthGuard)
@@ -16,6 +20,11 @@ export class VoiceController {
     @UploadedFile() file: Express.Multer.File,
     @Body('language') language?: string,
   ) {
+    const settings = await this.settingsService.getSettings()
+    if (!settings.enableVoiceInput) {
+      throw new ForbiddenException('语音输入已被管理员禁用')
+    }
+
     if (!file) {
       throw new BadRequestException('请上传音频文件')
     }
@@ -30,6 +39,11 @@ export class VoiceController {
     @Body() body: TextToSpeechDto,
     @Res() res: Response,
   ) {
+    const settings = await this.settingsService.getSettings()
+    if (!settings.enableTts) {
+      throw new ForbiddenException('语音合成已被管理员禁用')
+    }
+
     const audioBuffer = await this.voiceService.textToSpeech(
       body.text,
       body.voice,

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
+import { SettingsService } from '../settings/settings.service'
 import { AiService } from './ai.service'
 import { SSEWriter } from './sse-writer'
 import { MessagePersister } from './message-persister'
@@ -16,6 +17,7 @@ export class ChatService {
     private aiService: AiService,
     private configService: ConfigService,
     private toolRegistry: ToolRegistry,
+    private settingsService: SettingsService,
   ) {}
 
   async handleChatRequest(
@@ -43,6 +45,10 @@ export class ChatService {
     const sseWriter = new SSEWriter(res)
 
     try {
+      // 管理员关闭联网搜索时强制禁用（系统提示词与工具均不暴露）
+      const settings = await this.settingsService.getSettings()
+      const webSearchEnabled = settings.enableWebSearch && !!webSearch
+
       // 获取或创建会话
       const conversationId = await this.getOrCreateConversation(userId, existingConvId)
 
@@ -57,13 +63,13 @@ export class ChatService {
       )
 
       // 获取历史记录并构建上下文
-      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearch)
+      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearchEnabled)
 
       // 设置持久化器
       const persister = new MessagePersister(this.prisma)
 
       // 确定可用工具
-      const tools = this.getAvailableTools(webSearch)
+      const tools = this.getAvailableTools(webSearchEnabled)
 
       // 处理流式响应
       await handleStream(this.aiService, persister, this.toolRegistry, sseWriter, assistantMessage.id, {
