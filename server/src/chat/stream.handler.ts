@@ -13,6 +13,10 @@ export interface StreamOptions {
   temperature?: number
   maxTokens?: number
   enableThinking?: boolean
+  /** 已持久化的用户消息 ID（随 complete 事件返回） */
+  userMessageId?: string
+  /** 是否为首条消息（触发 AI 标题生成） */
+  shouldGenerateTitle?: boolean
 }
 
 export async function handleStream(
@@ -187,11 +191,11 @@ export async function handleStream(
         })
       }
 
-      // Save tool calls and results to message
+      // Save tool calls and results to message（保存真实执行结果文本，截断到 4000 字符）
       await persister.updateToolCalls(assistantMessageId, assistantToolCalls)
       await persister.updateToolResults(
         assistantMessageId,
-        assistantToolCalls.map(tc => ({ id: tc.id, name: tc.name, result: 'executed' })),
+        toolResults.map(tr => ({ id: tr.id, name: tr.name, result: tr.result.slice(0, 4000) })),
       )
 
       // Continue to next round
@@ -212,21 +216,17 @@ export async function handleStream(
   }
 
   // 先发送完成信号，让客户端立即停止加载动画，再进行标题生成
-  sseWriter.sendComplete(assistantMessageId, options.conversationId)
+  sseWriter.sendComplete(assistantMessageId, options.conversationId, options.userMessageId)
 
   // 阶段 B：首个回合完成后用 AI 生成精简标题（任何异常都不允许影响流）
   try {
-    if (options.conversationId && fullContent) {
-      // getMessageHistory 带 take 限制无法判断回合数，需以消息总数判断是否为首回合
-      const messageCount = await persister.countMessages(options.conversationId)
-      if (messageCount <= 2) {
-        const history = await persister.getMessageHistory(options.conversationId, 2)
-        const firstUserMessage = history.find(m => m.role === 'user')?.content || ''
-        const title = await generateConversationTitle(aiService, options, firstUserMessage, fullContent)
-        if (title) {
-          await persister.updateConversationTitle(options.conversationId, title)
-          sseWriter.sendTitle(options.conversationId, title)
-        }
+    if (options.conversationId && options.shouldGenerateTitle && fullContent) {
+      const history = await persister.getMessageHistory(options.conversationId, 2)
+      const firstUserMessage = history.find(m => m.role === 'user')?.content || ''
+      const title = await generateConversationTitle(aiService, options, firstUserMessage, fullContent)
+      if (title) {
+        await persister.updateConversationTitle(options.conversationId, title)
+        sseWriter.sendTitle(options.conversationId, title)
       }
     }
   } catch (err) {

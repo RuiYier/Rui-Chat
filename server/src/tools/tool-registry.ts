@@ -32,6 +32,15 @@ export class ToolRegistry {
   }
 
   /**
+   * 注销指定名称的工具
+   * @param name 工具名称
+   * @returns 是否成功移除（不存在则返回 false）
+   */
+  unregister(name: string): boolean {
+    return this.tools.delete(name)
+  }
+
+  /**
    * 获取指定名称的工具
    * @param name 工具名称
    * @returns 工具实例，不存在则返回 undefined

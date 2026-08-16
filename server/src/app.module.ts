@@ -13,6 +13,7 @@ import { UploadModule } from './upload/upload.module'
 import { ShareModule } from './share/share.module'
 import { ExportModule } from './export/export.module'
 import { ToolsModule } from './tools/tools.module'
+import { McpModule } from './mcp/mcp.module'
 import { SettingsModule } from './settings/settings.module'
 import { AdminModule } from './admin/admin.module'
 
@@ -56,6 +57,7 @@ import { AdminModule } from './admin/admin.module'
     ShareModule,
     ExportModule,
     ToolsModule,
+    McpModule,
     SettingsModule,
     AdminModule,
   ],

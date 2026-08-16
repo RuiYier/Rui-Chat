@@ -32,6 +32,9 @@ async function bootstrap() {
     }),
   )
 
+  // 启用生命周期钩子，确保应用关闭时清理 Prisma 连接与 MCP 客户端
+  app.enableShutdownHooks()
+
   const port = process.env.PORT || 3000
   await app.listen(port)
   console.log(`Server running on http://localhost:${port}`)

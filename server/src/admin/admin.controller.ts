@@ -10,6 +10,8 @@ import { UpdateProviderDto } from './dto/update-provider.dto'
 import { CreateModelDto } from './dto/create-model.dto'
 import { UpdateModelDto } from './dto/update-model.dto'
 import { UpdateSettingsDto } from './dto/update-settings.dto'
+import { CreateMcpServerDto } from './dto/create-mcp-server.dto'
+import { UpdateMcpServerDto } from './dto/update-mcp-server.dto'
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, AdminGuard)
@@ -89,6 +91,28 @@ export class AdminController {
   @Delete('models/:id')
   deleteModel(@Param('id') id: string) {
     return this.adminService.deleteModel(id)
+  }
+
+  // ========== MCP 服务器管理 ==========
+
+  @Get('mcp')
+  listMcpServers() {
+    return this.adminService.listMcpServers()
+  }
+
+  @Post('mcp')
+  createMcpServer(@Body() dto: CreateMcpServerDto) {
+    return this.adminService.createMcpServer(dto)
+  }
+
+  @Patch('mcp/:id')
+  updateMcpServer(@Param('id') id: string, @Body() dto: UpdateMcpServerDto) {
+    return this.adminService.updateMcpServer(id, dto)
+  }
+
+  @Delete('mcp/:id')
+  deleteMcpServer(@Param('id') id: string) {
+    return this.adminService.deleteMcpServer(id)
   }
 
   // ========== 系统设置 ==========

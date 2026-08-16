@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../prisma/prisma.service'
 import { SettingsService } from '../settings/settings.service'
+import { McpService } from '../mcp/mcp.service'
 import { AiService } from './ai.service'
 import { ProviderConfigService } from './provider-config.service'
 import { SSEWriter } from './sse-writer'
@@ -20,6 +21,7 @@ export class ChatService {
     private toolRegistry: ToolRegistry,
     private settingsService: SettingsService,
     private providerConfigService: ProviderConfigService,
+    private mcpService: McpService,
   ) {}
 
   async handleChatRequest(
@@ -30,6 +32,7 @@ export class ChatService {
       model?: string
       thinking?: boolean
       webSearch?: boolean
+      mcpServers?: string[]
       attachments?: any[]
     },
     res: Response,
@@ -40,6 +43,7 @@ export class ChatService {
       model = 'mimo-v2.5-pro',
       thinking = false,
       webSearch = false,
+      mcpServers,
       attachments,
     } = body
 
@@ -78,11 +82,16 @@ export class ChatService {
         await persister.setTitleIfDefault(conversationId, content.slice(0, 30).replace(/\n/g, ' '))
       }
 
-      // 获取历史记录并构建上下文
-      const contextMessages = await this.buildContext(conversationId, content, attachments, webSearchEnabled)
+      // 确定可用工具（web_search + 用户选择的 MCP 服务器工具）
+      const mcpToolNames = this.mcpService.getToolNamesFor(mcpServers)
+      const tools = this.getAvailableTools(webSearchEnabled, mcpToolNames)
 
-      // 确定可用工具
-      const tools = this.getAvailableTools(webSearchEnabled)
+      // 获取历史记录并构建上下文（工具元信息用于系统提示词的能力说明）
+      const toolInfos = this.toolRegistry
+        .getToolDefinitions()
+        .filter(t => tools.includes(t.function.name))
+        .map(t => ({ name: t.function.name, description: t.function.description }))
+      const contextMessages = await this.buildContext(conversationId, content, attachments, toolInfos)
 
       // 处理流式响应
       await handleStream(this.aiService, persister, this.toolRegistry, sseWriter, assistantMessage.id, {
@@ -93,6 +102,8 @@ export class ChatService {
         tools,
         enableThinking: thinking,
         conversationId,
+        userMessageId: userMessage.id,
+        shouldGenerateTitle: isFirstMessage,
       })
     } catch (err: any) {
       sseWriter.error(err.message || '处理请求时出错')
@@ -150,29 +161,35 @@ export class ChatService {
 
   /**
    * 获取历史记录并构建上下文
+   * 取按 seq 排序的最新 50 条，去掉刚持久化的用户消息与助手占位（最新 2 条）后反转回时间正序
    */
-  private async buildContext(conversationId: string, content: string, attachments?: any[], webSearch?: boolean) {
+  private async buildContext(
+    conversationId: string,
+    content: string,
+    attachments?: any[],
+    tools: { name: string; description: string }[] = [],
+  ) {
     const history = await this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { seq: 'desc' },
       take: 50,
       select: { role: true, content: true, thinking: true },
     })
 
-    return buildContextMessages(history.slice(0, -2), {
+    return buildContextMessages(history.slice(2).reverse(), {
       role: 'user',
       content,
-    }, attachments, { hasWebSearch: webSearch ?? false })
+    }, attachments, { tools })
   }
 
   /**
-   * 获取可用工具列表
+   * 获取可用工具列表（web_search + MCP 工具）
    */
-  private getAvailableTools(webSearch: boolean): string[] {
+  private getAvailableTools(webSearch: boolean, mcpToolNames: string[] = []): string[] {
     const tools: string[] = []
     if (webSearch && this.configService.get('TAVILY_API_KEY')) {
       tools.push('web_search')
     }
-    return tools
+    return [...tools, ...mcpToolNames]
   }
 }

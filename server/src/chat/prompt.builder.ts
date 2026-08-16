@@ -2,6 +2,7 @@ export interface PromptContext {
   hasWebSearch?: boolean
   hasImageUnderstanding?: boolean
   hasAudioUnderstanding?: boolean
+  tools?: { name: string; description: string }[]
   attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>
 }
 
@@ -16,9 +17,16 @@ export function buildSystemPrompt(context: PromptContext = {}): string {
 - 支持图片理解（用户可以发送图片）
 - 支持音频理解（用户可以发送音频）`
 
-  if (context.hasWebSearch) {
+  if (context.tools && context.tools.length > 0) {
+    const toolLines = context.tools.map(tool => {
+      if (tool.name === 'web_search') {
+        return '- 支持网络搜索（当需要实时信息时，你可以调用 web_search 工具）'
+      }
+      const description = tool.description.length > 120 ? tool.description.slice(0, 120) : tool.description
+      return `- 可调用工具 ${tool.name}：${description}`
+    })
     prompt += `
-- 支持网络搜索（当需要实时信息时，你可以调用 web_search 工具）`
+${toolLines.join('\n')}`
   }
 
   prompt += `
@@ -45,14 +53,18 @@ export function buildContextMessages(
   history: Array<{ role: string; content: string; thinking?: string | null }>,
   currentUserMessage: any,
   attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>,
-  options?: { hasWebSearch?: boolean },
+  options?: { hasWebSearch?: boolean; tools?: { name: string; description: string }[] },
 ): any[] {
   const messages: any[] = []
 
   // Add system prompt (text attachments only)
   messages.push({
     role: 'system',
-    content: buildSystemPrompt({ hasWebSearch: options?.hasWebSearch ?? false, attachments }),
+    content: buildSystemPrompt({
+      hasWebSearch: options?.hasWebSearch ?? false,
+      tools: options?.tools,
+      attachments,
+    }),
   })
 
   // Add conversation history (last 20 messages for context window)

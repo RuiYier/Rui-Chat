@@ -1,13 +1,16 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { SettingsService, UpdateSystemSettingsData } from '../settings/settings.service'
+import { McpService } from '../mcp/mcp.service'
 import { CreateUserDto } from './dto/create-user.dto'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { CreateProviderDto } from './dto/create-provider.dto'
 import { UpdateProviderDto } from './dto/update-provider.dto'
 import { CreateModelDto } from './dto/create-model.dto'
 import { UpdateModelDto } from './dto/update-model.dto'
-import { Model, Provider } from '@prisma/client'
+import { CreateMcpServerDto } from './dto/create-mcp-server.dto'
+import { UpdateMcpServerDto } from './dto/update-mcp-server.dto'
+import { Model, Provider, McpServer } from '@prisma/client'
 import * as bcrypt from 'bcryptjs'
 
 @Injectable()
@@ -15,6 +18,7 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private settingsService: SettingsService,
+    private mcpService: McpService,
   ) {}
 
   // ========== 统计 ==========
@@ -314,6 +318,155 @@ export class AdminService {
     }
 
     await this.prisma.model.delete({ where: { id } })
+  }
+
+  // ========== MCP 服务器管理 ==========
+
+  async listMcpServers() {
+    const servers = await this.prisma.mcpServer.findMany({ orderBy: { createdAt: 'asc' } })
+    return servers.map((server) => this.toMcpServerDto(server))
+  }
+
+  async createMcpServer(dto: CreateMcpServerDto) {
+    this.validateMcpConfig(dto)
+
+    let server: McpServer
+    try {
+      server = await this.prisma.mcpServer.create({
+        data: {
+          name: dto.name,
+          transport: dto.transport,
+          command: dto.command || null,
+          args: (dto.args as any) || undefined,
+          url: dto.url || null,
+          headers: (dto.headers as any) || undefined,
+          isEnabled: dto.isEnabled ?? true,
+        },
+      })
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        throw new ConflictException('MCP 服务器名称已存在')
+      }
+      throw err
+    }
+
+    await this.syncWithTimeout(server)
+    return this.toMcpServerDto(server)
+  }
+
+  async updateMcpServer(id: string, dto: UpdateMcpServerDto) {
+    const existing = await this.prisma.mcpServer.findUnique({ where: { id } })
+    if (!existing) {
+      throw new NotFoundException('MCP 服务器不存在')
+    }
+
+    // 以合并后的完整配置校验传输方式与必填字段
+    this.validateMcpConfig({
+      transport: dto.transport ?? existing.transport,
+      command: dto.command !== undefined ? dto.command : (existing.command ?? undefined),
+      url: dto.url !== undefined ? dto.url : (existing.url ?? undefined),
+    })
+
+    const data: {
+      name?: string
+      transport?: string
+      command?: string | null
+      args?: any
+      url?: string | null
+      headers?: any
+      isEnabled?: boolean
+    } = {}
+    if (dto.name !== undefined) data.name = dto.name
+    if (dto.transport !== undefined) data.transport = dto.transport
+    if (dto.command !== undefined) data.command = dto.command || null
+    if (dto.args !== undefined) data.args = dto.args as any
+    if (dto.url !== undefined) data.url = dto.url || null
+    if (dto.headers !== undefined) data.headers = dto.headers as any
+    if (dto.isEnabled !== undefined) data.isEnabled = dto.isEnabled
+
+    let server: McpServer
+    if (Object.keys(data).length === 0) {
+      server = existing
+    } else {
+      try {
+        server = await this.prisma.mcpServer.update({ where: { id }, data })
+      } catch (err: any) {
+        if (err.code === 'P2002') {
+          throw new ConflictException('MCP 服务器名称已存在')
+        }
+        throw err
+      }
+    }
+
+    // 断开旧连接并按新配置重连（重新注册工具）
+    await this.syncWithTimeout(server)
+    return this.toMcpServerDto(server)
+  }
+
+  async deleteMcpServer(id: string) {
+    const existing = await this.prisma.mcpServer.findUnique({ where: { id } })
+    if (!existing) {
+      throw new NotFoundException('MCP 服务器不存在')
+    }
+
+    // 先注销工具并关闭连接，再删除记录
+    await this.mcpService.disconnect(id)
+    await this.prisma.mcpServer.delete({ where: { id } })
+  }
+
+  /**
+   * 校验 MCP 配置：stdio 需要 command，http 需要以 http(s) 开头的 url
+   */
+  private validateMcpConfig(config: { transport: string; command?: string; url?: string }) {
+    if (config.transport === 'stdio') {
+      if (!config.command || !config.command.trim()) {
+        throw new BadRequestException('stdio 传输方式需要提供 command')
+      }
+    } else if (config.transport === 'http') {
+      if (!config.url || !/^https?:\/\//.test(config.url)) {
+        throw new BadRequestException('http 传输方式需要提供以 http:// 或 https:// 开头的 url')
+      }
+    }
+  }
+
+  /**
+   * 触发单个服务器同步，最多等待 10 秒（超时则继续在后台连接）
+   */
+  private async syncWithTimeout(server: McpServer): Promise<void> {
+    await Promise.race([
+      this.mcpService.syncServer(server),
+      new Promise<void>((resolve) => setTimeout(resolve, 10_000).unref()),
+    ])
+  }
+
+  private toMcpServerDto(server: McpServer) {
+    const status = this.mcpService.getStatuses().get(server.id)
+    const tools = status?.tools || []
+    return {
+      id: server.id,
+      name: server.name,
+      transport: server.transport,
+      command: server.command,
+      args: server.args,
+      url: server.url,
+      headersMasked: this.maskHeaders(server.headers),
+      isEnabled: server.isEnabled,
+      status: status?.status ?? (server.isEnabled ? 'error' : 'disabled'),
+      statusMessage: status?.statusMessage ?? (server.isEnabled && !status ? '尚未连接' : undefined),
+      toolCount: tools.length,
+      tools: tools.map((t) => ({ name: t.name, description: t.description })),
+      createdAt: server.createdAt,
+    }
+  }
+
+  /** 头部值统一脱敏为 ***，仅保留键名 */
+  private maskHeaders(headers: unknown): Record<string, string> | null {
+    if (!headers || typeof headers !== 'object' || Array.isArray(headers)) return null
+    const masked: Record<string, string> = {}
+    for (const key of Object.keys(headers as Record<string, unknown>)) {
+      masked[key] = '***'
+    }
+    return masked
   }
 
   // ========== 系统设置 ==========

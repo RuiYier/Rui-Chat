@@ -24,5 +24,9 @@ export class ChatDto {
 
   @IsOptional()
   @IsArray()
+  mcpServers?: string[]
+
+  @IsOptional()
+  @IsArray()
   attachments?: any[]
 }
