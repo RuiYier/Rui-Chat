@@ -1,6 +1,6 @@
 # Rui Chat
 
-支持多供应商（OpenAI 兼容协议，后台可配）的智能对话助手，使用 Vue 3 + NestJS 架构。支持语音输入、流式语音合成、图片识别、深度思考过程、AI 自动标题、后台管理、对话分享导出等。
+支持多供应商（OpenAI 兼容协议，后台可配）的智能对话助手，使用 Vue 3 + NestJS 架构。支持 MCP 工具调用、语音输入、流式语音合成、图片识别、深度思考过程、AI 自动标题、消息编辑/重新生成、Artifacts 预览（HTML/SVG/Mermaid）、后台管理、对话分享导出等。
 
 ![Chat interface](docs/chat-interface.jpg)
 
@@ -16,6 +16,7 @@
 - **UI 组件库**: Element Plus
 - **字体**: Geom + PingFang SC
 - **Markdown**: Markdown-it + Highlight.js
+- **Artifacts**: Mermaid + DOMPurify（沙箱 iframe 预览）
 
 ### 后端
 
@@ -39,6 +40,8 @@
 - 模型切换（列表由后台配置，服务端 `/api/models` 下发）
 - AI 自动标题（发送首条消息时先用用户输入前30字作标题，回复完成后 AI 生成15字以内标题并实时推送更新）
 - 深度思考模式 (推理过程可视化)
+- 消息编辑与重新生成（经典截断式，详见 docs/message-operations.md）
+- Artifacts 预览（html/svg/mermaid 代码块右侧面板实时渲染，详见 docs/artifacts.md）
 - 会话管理 (创建/删除/重命名/置顶)
 - 消息操作 (复制/朗读)
 
@@ -61,13 +64,15 @@
 
 ### 工具
 
-- Web 搜索 (Tavily API)
+- Web 搜索 (Tavily API，与 MCP 统一工具管线)
+- MCP 工具调用 (Model Context Protocol，stdio / Streamable HTTP，详见 docs/mcp.md)
 
 ### 后台管理
 
 - 管理入口 `/admin`（首个注册用户自动成为管理员；存量数据库在服务启动时自动提权最早注册的用户）
 - 用户管理：增删改查、提权/降权、重置密码（不能操作自己的角色、不能删除最后一个管理员）
 - 供应商与模型管理：对话模型支持任意 OpenAI 兼容协议供应商（Base URL + API Key + 模型ID），数据库配置优先，`.env` 中的 MiMo 配置兜底；TTS/语音识别固定使用 MiMo，不在此管理
+- MCP 服务管理：配置 stdio / HTTP MCP 服务器、连接测试、按服务器启停；用户侧可勾选启用哪些服务器的工具
 - 系统设置（全局开关）：语音输入 / 联网搜索 / TTS / 开放注册，关闭后用户侧对应功能直接隐藏且接口返回 403
 
 ### 其他
@@ -192,7 +197,8 @@ Rui-Chat/
 │   │   ├── export/            # 导出功能
 │   │   ├── share/             # 分享功能
 │   │   ├── user/              # 用户管理
-│   │   ├── admin/             # 后台管理 (用户/供应商/模型/设置)
+│   │   ├── mcp/               # MCP 客户端连接池与用户接口
+│   │   ├── admin/             # 后台管理 (用户/供应商/模型/MCP/设置)
 │   │   ├── settings/          # 系统设置 (功能开关)
 │   │   ├── prisma/            # 数据库服务
 │   │   └── common/            # 公共模块 (守卫/装饰器)
