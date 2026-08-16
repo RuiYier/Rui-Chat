@@ -27,4 +27,15 @@ export class VoiceService {
 
     return this.aiService.textToSpeech(text, voice, format, style)
   }
+
+  /**
+   * 流式文本转语音（返回上游 Response，PCM16 分片由控制器转发给客户端）
+   */
+  async streamTextToSpeech(text: string, voice: string = 'mimo_default', style?: string) {
+    if (!text || text.trim().length === 0) {
+      throw new BadRequestException('文本不能为空')
+    }
+
+    return this.aiService.textToSpeechStream(text, voice, style)
+  }
 }
