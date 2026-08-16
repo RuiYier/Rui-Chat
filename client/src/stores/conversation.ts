@@ -31,6 +31,15 @@ export const useConversationStore = defineStore('conversation', () => {
     return conv
   }
 
+  /** 本地重命名会话（不请求服务端, 用于 SSE 推送的 AI 标题） */
+  function renameConversationLocally(id: string, title: string) {
+    if (!id || !title) return
+    const idx = conversations.value.findIndex(c => c.id === id)
+    if (idx !== -1) {
+      conversations.value[idx] = { ...conversations.value[idx], title }
+    }
+  }
+
   async function updateConversation(id: string, data: { title?: string; isPinned?: boolean }) {
     const updated = await ConversationService.update(id, data)
     const idx = conversations.value.findIndex(c => c.id === id)
@@ -76,6 +85,7 @@ export const useConversationStore = defineStore('conversation', () => {
     filteredConversations,
     fetchConversations,
     createConversation,
+    renameConversationLocally,
     updateConversation,
     deleteConversation,
     shareConversation,

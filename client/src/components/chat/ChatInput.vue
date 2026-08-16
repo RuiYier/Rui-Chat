@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import { useAuthStore } from '@/stores/auth'
 import { UploadService } from '@/services/upload.service'
 import { VoiceService } from '@/services/voice.service'
 import { ElMessage } from 'element-plus'
@@ -8,6 +9,7 @@ import { VOICES } from '@/constants/voices'
 
 const emit = defineEmits<{ send: [content: string, attachments?: any[]] }>()
 const chatStore = useChatStore()
+const authStore = useAuthStore()
 const inputText = ref('')
 const attachments = ref<any[]>([])
 const isRecording = ref(false)
@@ -161,7 +163,7 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
             </label>
 
             <!-- Voice -->
-            <div style="position:relative">
+            <div v-if="authStore.features.tts" style="position:relative">
               <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)' }" @click="showVoiceMenu = !showVoiceMenu">
                 <el-icon :size="18"><Headset /></el-icon>
               </button>
@@ -176,12 +178,12 @@ function selectVoice(id: string) { chatStore.setVoice(id); showVoiceMenu.value =
             </div>
 
             <!-- Search -->
-            <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: chatStore.config.webSearch ? '#3B82F6' : 'transparent', color: chatStore.config.webSearch ? '#fff' : 'var(--text-tertiary)' }" @click="chatStore.toggleWebSearch()">
+            <button v-if="authStore.features.webSearch" :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: chatStore.config.webSearch ? '#3B82F6' : 'transparent', color: chatStore.config.webSearch ? '#fff' : 'var(--text-tertiary)' }" @click="chatStore.toggleWebSearch()">
               <el-icon :size="18"><Search /></el-icon>
             </button>
 
             <!-- Mic -->
-            <button :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: isRecording ? 'var(--accent-red)' : 'transparent', color: isRecording ? '#fff' : 'var(--text-tertiary)' }" @click="toggleRecording">
+            <button v-if="authStore.features.voiceInput" :style="{ width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: isRecording ? 'var(--accent-red)' : 'transparent', color: isRecording ? '#fff' : 'var(--text-tertiary)' }" @click="toggleRecording">
               <el-icon :size="18"><Mic /></el-icon>
             </button>
           </div>

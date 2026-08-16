@@ -7,6 +7,7 @@ export interface SSECallbacks {
   onToolProgress?: (id: string, progress: number, message: string) => void
   onToolResult?: (id: string, result: string) => void
   onComplete?: (messageId: string, conversationId?: string) => void
+  onTitle?: (conversationId: string, title: string) => void
   onError?: (message: string) => void
 }
 
@@ -87,6 +88,9 @@ export const ChatService = {
               case 'complete':
                 callbacks?.onComplete?.(parsed.messageId, parsed.conversationId)
                 break
+              case 'title':
+                callbacks?.onTitle?.(parsed.conversationId, parsed.title)
+                break
               case 'error':
                 callbacks?.onError?.(parsed.message)
                 break
@@ -107,6 +111,16 @@ export const ChatService = {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (!response.ok) throw new Error('加载消息失败')
+    return response.json()
+  },
+
+  /** 获取服务端可用模型列表 */
+  async getModels(): Promise<{ models: { modelId: string; displayName: string }[] }> {
+    const token = localStorage.getItem('token')
+    const response = await fetch('/api/models', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) throw new Error('获取模型列表失败')
     return response.json()
   },
 }

@@ -6,6 +6,7 @@ import { ChatService } from '@/services/chat.service'
 import { createMessageState, appendThinking, appendAnswer, transitionPhase } from '@/utils/message-state'
 import { DEFAULT_MODEL } from '@/constants/models'
 import { DEFAULT_VOICE } from '@/constants/voices'
+import { useConversationStore } from '@/stores/conversation'
 import { ElMessage } from 'element-plus'
 
 /**
@@ -177,6 +178,10 @@ export const useChatStore = defineStore('chat', () => {
             const newStates = new Map(messageStates.value)
             newStates.set(assistantMsgId, { ...s, activeTools: new Map() })
             messageStates.value = newStates
+          },
+          onTitle(conversationId, title) {
+            // AI 生成的会话标题: 立即更新侧边栏, 无需重新拉取
+            useConversationStore().renameConversationLocally(conversationId, title)
           },
           onError(message) {
             const s = getMessageState(assistantMsgId)

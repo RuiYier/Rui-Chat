@@ -38,7 +38,9 @@ watch(() => route.params.id, async (newId) => {
 
 async function handleSend(content: string, attachments?: any[]) {
   if (!chatStore.currentConversationId) {
-    const conv = await convStore.createConversation()
+    // 新会话: 用用户输入片段作为初始标题, 侧边栏立即可见（服务端还有 AI 标题兜底）
+    const title = content.trim().slice(0, 30).replace(/\n/g, ' ')
+    const conv = await convStore.createConversation(title)
     chatStore.setConversation(conv.id)
     router.push(`/chat/${conv.id}`)
   }
