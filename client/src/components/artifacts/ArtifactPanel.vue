@@ -18,6 +18,27 @@ let themeObserver: MutationObserver | null = null
 let mermaidLib: Awaited<typeof import('mermaid')>['default'] | null = null
 let mermaidRenderSeq = 0
 
+// Mermaid 缩放（0.5x - 5x），按宽度百分比缩放，溢出由外层滚动容器承接
+const mermaidScale = ref(1)
+
+function clampScale(v: number) {
+  mermaidScale.value = Math.min(5, Math.max(0.5, Math.round(v * 100) / 100))
+}
+function zoomIn() {
+  clampScale(mermaidScale.value * 1.25)
+}
+function zoomOut() {
+  clampScale(mermaidScale.value / 1.25)
+}
+function resetZoom() {
+  mermaidScale.value = 1
+}
+function onMermaidWheel(e: WheelEvent) {
+  if (!e.ctrlKey) return
+  e.preventDefault()
+  clampScale(mermaidScale.value * (e.deltaY < 0 ? 1.1 : 0.9))
+}
+
 function onMqChange(e: MediaQueryListEvent) {
   isNarrow.value = e.matches
 }
@@ -83,6 +104,7 @@ async function renderMermaid(code: string) {
 }
 
 watch(() => artifactStore.current, (artifact) => {
+  mermaidScale.value = 1
   if (artifact?.lang === 'mermaid' && artifact.code) {
     renderMermaid(artifact.code)
   }
@@ -158,6 +180,36 @@ function handleDownload() {
     <div :style="{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderBottom: '1px solid var(--border)', flexShrink: 0 }">
       <span :style="{ padding: '2px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 500, background: 'var(--input-bg)', color: 'var(--text-secondary)', cursor: 'default', userSelect: 'none' }">{{ langLabel }}</span>
       <div style="flex:1" />
+      <!-- Mermaid zoom controls -->
+      <template v-if="current.lang === 'mermaid'">
+        <button
+          :style="{ width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)', transition: 'background 0.15s' }"
+          title="缩小"
+          @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-bg)'"
+          @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+          @click="zoomOut"
+        >
+          <el-icon :size="14"><ZoomOut /></el-icon>
+        </button>
+        <button
+          :style="{ height: '28px', padding: '0 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)', transition: 'background 0.15s', fontSize: '12px', userSelect: 'none' }"
+          title="重置缩放"
+          @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-bg)'"
+          @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+          @click="resetZoom"
+        >
+          {{ Math.round(mermaidScale * 100) }}%
+        </button>
+        <button
+          :style="{ width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)', transition: 'background 0.15s' }"
+          title="放大"
+          @mouseenter="($event.currentTarget as HTMLElement).style.background = 'var(--input-bg)'"
+          @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
+          @click="zoomIn"
+        >
+          <el-icon :size="14"><ZoomIn /></el-icon>
+        </button>
+      </template>
       <!-- Copy -->
       <button
         :style="{ width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-tertiary)', transition: 'background 0.15s' }"
@@ -201,7 +253,7 @@ function handleDownload() {
       />
 
       <!-- Mermaid -->
-      <div v-else :style="{ width: '100%', height: '100%', overflow: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 0 }">
+      <div v-else :style="{ width: '100%', height: '100%', overflow: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 0 }" @wheel="onMermaidWheel">
         <!-- Render error -->
         <div v-if="mermaidError" :style="{ width: '100%', maxWidth: '640px', padding: '16px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--border)' }">
           <pre :style="{ margin: 0, padding: 0, background: 'transparent', fontSize: '12px', lineHeight: 1.6, color: 'var(--accent-red)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace', overflow: 'visible' }">{{ mermaidError }}</pre>
@@ -211,8 +263,9 @@ function handleDownload() {
         <div
           v-else-if="mermaidSvg"
           ref="mermaidContainer"
+          class="mermaid-body"
           v-html="mermaidSvg"
-          :style="{ maxWidth: '100%', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }"
+          :style="{ width: mermaidScale * 100 + '%', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 'auto' }"
         />
         <!-- Loading -->
         <div v-else :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px', color: 'var(--text-tertiary)' }">
@@ -223,3 +276,10 @@ function handleDownload() {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* 覆盖 mermaid 注入的内联 max-width，使宽度百分比缩放生效 */
+.mermaid-body :deep(svg) {
+  max-width: none !important;
+}
+</style>
