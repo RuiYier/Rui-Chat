@@ -41,7 +41,7 @@
 - AI 自动标题（发送首条消息时先用用户输入前30字作标题，回复完成后 AI 生成15字以内标题并实时推送更新）
 - 深度思考模式 (推理过程可视化)
 - 消息编辑与重新生成（经典截断式，详见 docs/message-operations.md）
-- Artifacts 预览（html/svg/mermaid 代码块右侧面板实时渲染，详见 docs/artifacts.md）
+- Artifacts 预览（html/svg/mermaid 代码块右侧面板实时渲染，Mermaid 支持缩放，详见 docs/artifacts.md）
 - 会话管理 (创建/删除/重命名/置顶)
 - 消息操作 (复制/朗读)
 

@@ -8,9 +8,9 @@ AI 回复中的 `html` / `svg` / `mermaid` 代码块可一键在右侧面板实�
 |---|---|---|
 | `html` | DOMPurify 消毒 → `<iframe sandbox="allow-scripts" srcdoc>` | 沙箱无 `allow-same-origin`，脚本可运行但拿不到宿主源与存储 |
 | `svg` | 同上（包裹为完整 HTML 文档居中展示） | 同样经过消毒 |
-| `mermaid` | `mermaid` 本地渲染（v11，懒加载分包） | `securityLevel: 'strict'`，主题跟随明暗模式自动重渲；语法错误时显示错误信息块 |
+| `mermaid` | `mermaid` 本地渲染（v11，懒加载分包） | `securityLevel: 'strict'`，主题跟随明暗模式自动重渲；语法错误时显示错误信息块；**支持缩放**（0.5x–5x） |
 
-面板头部：类型标签 + 复制 + 下载（`.html` / `.svg`，mermaid 导出渲染后的 svg）+ 关闭（支持 Esc）。
+面板头部：类型标签 + 复制 + 下载（`.html` / `.svg`，mermaid 导出渲染后的 svg）+ 关闭（支持 Esc）；Mermaid 额外提供缩放控制——放大/缩小/重置按钮（点击百分比标签恢复 100%）与 `Ctrl + 滚轮`。
 
 ## 实现管线
 
@@ -32,6 +32,8 @@ ArtifactPanel.vue（Chat.vue 主区 flex 右栏 45%/min 480px；<768px 全屏覆
 ```
 
 **索引对齐保证**：按钮 `data-artifact-idx` 与 `extractArtifacts` 列表使用同一个 `toArtifactLang(info)` 谓词（取围栏 info 首词、小写、限定三语言），两侧均按文档序计数——`highlight` 渲染期逐围栏递增、token 扫描按同序过滤，天然对齐（已单测覆盖：混排 html/js/mermaid/svg/带后缀 info 的场景）。
+
+**Mermaid 缩放实现**：mermaid 渲染的 svg 自带内联 `max-width` 限制，面板通过 `:deep(svg) { max-width: none !important }` 解除约束后，以外层容器宽度百分比（`width: scale * 100%`）驱动 svg 等比缩放——溢出自然落入滚动容器，避免了 transform 缩放"视觉溢出不可滚动"的问题；缩放状态在切换产物时重置。
 
 ## 分享页与默认行为
 
