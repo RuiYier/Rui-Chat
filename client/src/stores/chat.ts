@@ -230,9 +230,25 @@ export const useChatStore = defineStore('chat', () => {
         controller.signal,
       )
     } catch (err: any) {
+      const aborted = controller.signal.aborted || err?.name === 'AbortError'
       const idx = messages.value.findIndex(m => m.id === assistantMsgId)
       if (idx !== -1) {
-        messages.value[idx].content = `发送失败: ${err.message}`
+        if (aborted) {
+          // 用户主动中断：保留已生成的部分内容；一个字都没生成则移除空占位
+          if (messages.value[idx].content) {
+            const stateMap = new Map(messageStates.value)
+            stateMap.set(assistantMsgId, { ...getMessageState(assistantMsgId), phase: 'idle', activeTools: new Map() })
+            messageStates.value = stateMap
+          } else {
+            messages.value.splice(idx, 1)
+            const stateMap = new Map(messageStates.value)
+            stateMap.delete(assistantMsgId)
+            messageStates.value = stateMap
+          }
+          ElMessage.info('已停止生成')
+        } else {
+          messages.value[idx].content = `发送失败: ${err.message}`
+        }
       }
     } finally {
       streaming.value = false

@@ -280,10 +280,12 @@ onBeforeUnmount(() => {
               @click="chatStore.toggleThinking()"
             >深度思考</button>
 
-            <!-- Send -->
+            <!-- Stop (streaming) -->
             <button
               v-if="chatStore.streaming"
               :style="{ width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', background: 'var(--button-primary-bg)', color: '#fff' }"
+              title="停止生成"
+              @click="chatStore.abortStream()"
             >
               <el-icon :size="16"><VideoPause /></el-icon>
             </button>

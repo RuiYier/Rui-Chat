@@ -93,7 +93,9 @@ export class ChatService {
         .map(t => ({ name: t.function.name, description: t.function.description }))
       const contextMessages = await this.buildContext(conversationId, content, attachments, toolInfos)
 
-      // 处理流式响应
+      // 处理流式响应（客户端断开，如点击停止生成，时中止上游 AI 请求）
+      const abortController = new AbortController()
+      res.on('close', () => abortController.abort())
       await handleStream(this.aiService, persister, this.toolRegistry, sseWriter, assistantMessage.id, {
         model: resolvedModel,
         baseUrl,
@@ -104,6 +106,7 @@ export class ChatService {
         conversationId,
         userMessageId: userMessage.id,
         shouldGenerateTitle: isFirstMessage,
+        signal: abortController.signal,
       })
     } catch (err: any) {
       sseWriter.error(err.message || '处理请求时出错')

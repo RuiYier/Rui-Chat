@@ -88,6 +88,14 @@ export class MessagePersister {
   }
 
   /**
+   * 删除消息（用于中断时清理尚未生成内容的助手占位）
+   * @param messageId 消息 ID
+   */
+  async deleteMessage(messageId: string) {
+    return this.prisma.message.delete({ where: { id: messageId } })
+  }
+
+  /**
    * 更新会话标题
    * @param conversationId 会话 ID
    * @param title 新的会话标题

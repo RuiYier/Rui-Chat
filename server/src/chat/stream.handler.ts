@@ -17,6 +17,8 @@ export interface StreamOptions {
   userMessageId?: string
   /** 是否为首条消息（触发 AI 标题生成） */
   shouldGenerateTitle?: boolean
+  /** 外部中止信号（客户端断开连接时中止上游请求并保存部分内容） */
+  signal?: AbortSignal
 }
 
 export async function handleStream(
@@ -32,7 +34,10 @@ export async function handleStream(
   const maxRounds = 5 // Maximum tool call rounds
   let fullContent = ''
   let fullThinking = ''
+  // 客户端中断（点击停止生成 / 断开连接）：true 时保存部分内容后静默结束
+  let aborted = false
 
+  try {
   for (let round = 0; round < maxRounds; round++) {
     console.log(`[Tool] Round ${round + 1}/${maxRounds}`)
 
@@ -60,6 +65,7 @@ export async function handleStream(
       ...requestBody,
       baseUrl: options.baseUrl,
       apiKey: options.apiKey,
+      signal: options.signal,
     })
 
     if (!response.ok) {
@@ -206,6 +212,14 @@ export async function handleStream(
     console.log('[Tool] No more tool calls, stream complete')
     break
   }
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      aborted = true
+      console.log('[Stream] Client aborted, saving partial content')
+    } else {
+      throw err
+    }
+  }
 
   // Save final content
   if (fullThinking) {
@@ -213,6 +227,14 @@ export async function handleStream(
   }
   if (fullContent) {
     await persister.updateMessageContent(assistantMessageId, fullContent)
+  }
+
+  // 用户中断：部分内容已保存；若尚未生成任何内容则清理空占位，且不再发送 SSE / 生成标题
+  if (aborted) {
+    if (!fullContent) {
+      await persister.deleteMessage(assistantMessageId)
+    }
+    return
   }
 
   // 先发送完成信号，让客户端立即停止加载动画，再进行标题生成

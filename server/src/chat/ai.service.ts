@@ -18,6 +18,8 @@ export interface ChatCompletionOptions {
   asr_options?: { language?: string }
   baseUrl?: string
   apiKey?: string
+  /** 外部中止信号（客户端断开连接时中止上游请求） */
+  signal?: AbortSignal
 }
 
 @Injectable()
@@ -49,10 +51,11 @@ export class AiService {
     if (options.audio) body.audio = options.audio
     if (options.asr_options) body.asr_options = options.asr_options
 
-    // 添加超时机制，默认 60 秒
+    // 添加超时机制，默认 60 秒；timeout 中止携带原因，以便与用户中断（AbortError）区分
     const timeout = this.configService.get('API_TIMEOUT', 60000)
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
+    const timeoutId = setTimeout(() => controller.abort(new Error('AI API 请求超时')), timeout)
+    const signal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal
 
     try {
       const response = await fetch(url, {
@@ -62,7 +65,7 @@ export class AiService {
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
-        signal: controller.signal,
+        signal,
       })
       return response
     } finally {
