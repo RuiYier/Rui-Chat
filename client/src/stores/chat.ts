@@ -107,12 +107,16 @@ export const useChatStore = defineStore('chat', () => {
       if (!pendingThinking && !pendingAnswer) return
       let s = getMessageState(assistantMsgId)
       if (pendingThinking) {
+        if (s.phase !== 'thinking' && s.phase !== 'error') {
+          s = transitionPhase(s, 'thinking')
+        }
         s = appendThinking(s, pendingThinking)
         liveAssistant.thinking = (liveAssistant.thinking || '') + pendingThinking
         pendingThinking = ''
       }
       if (pendingAnswer) {
-        if (s.phase === 'idle' || s.phase === 'thinking') {
+        // 工具调用后的下一轮正文同样切回 answering
+        if (s.phase !== 'answering' && s.phase !== 'error') {
           s = transitionPhase(s, 'answering')
         }
         s = appendAnswer(s, pendingAnswer)
