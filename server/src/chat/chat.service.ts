@@ -7,7 +7,7 @@ import { AiService } from './ai.service'
 import { ProviderConfigService } from './provider-config.service'
 import { SSEWriter } from './sse-writer'
 import { MessagePersister } from './message-persister'
-import { buildContextMessages } from './prompt.builder'
+import { buildContextMessages, HISTORY_MAX_MESSAGES } from './prompt.builder'
 import { handleStream } from './stream.handler'
 import { ToolRegistry } from '../tools/tool-registry'
 import { Response } from 'express'
@@ -164,7 +164,8 @@ export class ChatService {
 
   /**
    * 获取历史记录并构建上下文
-   * 取按 seq 排序的最新 50 条，去掉刚持久化的用户消息与助手占位（最新 2 条）后反转回时间正序
+   * 按 seq 倒序取最近 HISTORY_MAX_MESSAGES 条历史（多取 2 条：刚持久化的用户消息与助手占位），
+   * 去掉这 2 条后反转回时间正序；条数与字符预算的最终裁剪统一在 prompt.builder 中完成
    */
   private async buildContext(
     conversationId: string,
@@ -175,7 +176,7 @@ export class ChatService {
     const history = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: { seq: 'desc' },
-      take: 50,
+      take: HISTORY_MAX_MESSAGES + 2,
       select: { role: true, content: true, thinking: true },
     })
 

@@ -6,6 +6,28 @@ export interface PromptContext {
   attachments?: Array<{ name: string; content?: string; data?: string; type?: string; mimeType?: string }>
 }
 
+/** 历史上下文预算：最多携带的消息条数（chat.service 按此数从数据库取最近记录） */
+export const HISTORY_MAX_MESSAGES = 50
+/** 历史上下文预算：历史消息总字符数上限（粗略估算 token，防止少量长消息撑爆上下文） */
+export const HISTORY_MAX_CHARS = 30000
+
+/**
+ * 从最新一条往前挑选历史消息，直到条数或字符预算用尽，再恢复时间正序
+ * 空内容消息（中断/失败留下的占位）不进入上下文
+ */
+export function selectHistory<T extends { content: string }>(history: T[]): T[] {
+  const picked: T[] = []
+  let chars = 0
+  for (let i = history.length - 1; i >= 0 && picked.length < HISTORY_MAX_MESSAGES; i--) {
+    const msg = history[i]
+    if (!msg.content) continue
+    if (chars + msg.content.length > HISTORY_MAX_CHARS) break
+    chars += msg.content.length
+    picked.push(msg)
+  }
+  return picked.reverse()
+}
+
 export function buildSystemPrompt(context: PromptContext = {}): string {
   let prompt = `你是 Rui Chat AI 助手，基于小米 MiMo 大模型。你能够帮助用户解答问题、进行对话交流。
 
@@ -67,9 +89,8 @@ export function buildContextMessages(
     }),
   })
 
-  // Add conversation history (last 20 messages for context window)
-  const recentHistory = history.slice(-20)
-  for (const msg of recentHistory) {
+  // Add conversation history (bounded by message count and character budget)
+  for (const msg of selectHistory(history)) {
     messages.push({
       role: msg.role,
       content: msg.content,
