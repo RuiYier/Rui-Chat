@@ -44,7 +44,7 @@ watch(() => chatStore.messages[chatStore.messages.length - 1]?.content, () => { 
     <div v-else :style="{ maxWidth: '768px', margin: '0 auto', padding: '24px' }">
       <ChatMessage
         v-for="msg in chatStore.messages"
-        :key="msg.id"
+        :key="msg.localKey ?? msg.id"
         :message="msg"
         :state="chatStore.getMessageState(msg.id)"
         :is-streaming="chatStore.streamingMessageId === msg.id"

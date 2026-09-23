@@ -1,5 +1,7 @@
 export interface Message {
   id: string
+  /** 客户端渲染用的稳定 key：发送时生成，服务端 ID 替换后保持不变，避免列表项重挂载 */
+  localKey?: string
   conversationId: string
   role: 'user' | 'assistant' | 'system'
   content: string

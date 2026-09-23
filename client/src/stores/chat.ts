@@ -66,9 +66,11 @@ export const useChatStore = defineStore('chat', () => {
       ElMessage.info('图片消息自动切换至 MiMo-V2.5 模型')
     }
 
-    // 添加用户消息
+    // 添加用户消息（localKey 与乐观 ID 相同，complete 换成服务端 ID 后仍作为渲染 key）
+    const userMsgId = nanoid()
     const userMsg: Message = {
-      id: nanoid(),
+      id: userMsgId,
+      localKey: userMsgId,
       conversationId: currentConversationId.value || '',
       role: 'user',
       content,
@@ -81,6 +83,7 @@ export const useChatStore = defineStore('chat', () => {
     const assistantMsgId = nanoid()
     const assistantMsg: Message = {
       id: assistantMsgId,
+      localKey: assistantMsgId,
       conversationId: currentConversationId.value || '',
       role: 'assistant',
       content: '',
