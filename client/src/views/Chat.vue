@@ -31,9 +31,14 @@ onMounted(async () => {
 })
 
 watch(() => route.params.id, async (newId) => {
-  if (newId && typeof newId === 'string' && newId !== chatStore.currentConversationId) {
-    chatStore.setConversation(newId)
-    await chatStore.loadMessages(newId)
+  if (newId && typeof newId === 'string') {
+    if (newId !== chatStore.currentConversationId) {
+      chatStore.setConversation(newId)
+      await chatStore.loadMessages(newId)
+    }
+  } else if (chatStore.currentConversationId) {
+    // 路由回到 /chat（如删除了当前会话）：清空当前会话，流式进行中会一并中断
+    chatStore.newConversation()
   }
 })
 

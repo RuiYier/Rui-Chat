@@ -21,7 +21,13 @@ function startRename(conv: Conversation) { editingId.value = conv.id; editTitle.
 async function confirmRename() { if (editingId.value && editTitle.value.trim()) await convStore.updateConversation(editingId.value, { title: editTitle.value.trim() }); editingId.value = null }
 async function handleDelete(conv: Conversation) {
   openMenuId.value = null
-  try { await ElMessageBox.confirm('确定删除该对话？', '删除', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' }); await convStore.deleteConversation(conv.id); if (currentId.value === conv.id) router.push('/chat'); ElMessage.success('已删除') } catch {}
+  try {
+    await ElMessageBox.confirm('确定删除该对话？', '删除', { confirmButtonText: '删除', cancelButtonText: '取消', type: 'warning' })
+    // 删除当前会话：先离开（Chat.vue 会清空会话并中断流式），再删除，避免服务端继续写入将被删除的消息
+    if (currentId.value === conv.id) await router.push('/chat')
+    await convStore.deleteConversation(conv.id)
+    ElMessage.success('已删除')
+  } catch {}
 }
 async function handleShare(conv: Conversation) {
   openMenuId.value = null

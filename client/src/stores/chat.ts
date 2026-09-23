@@ -23,6 +23,8 @@ export const useChatStore = defineStore('chat', () => {
   const abortController = ref<AbortController | null>(null)
   /** 正在编辑的用户消息 ID */
   const editingMessageId = ref<string | null>(null)
+  /** 会话代次：每次切换会话递增，用于让旧会话的流式回调失效（无需响应式） */
+  let conversationEpoch = 0
 
   /** 聊天配置 */
   const config = ref<ChatConfig>({
@@ -94,6 +96,10 @@ export const useChatStore = defineStore('chat', () => {
     streamingMessageId.value = assistantMsgId
     streaming.value = true
 
+    // 记录发送时所在的会话代次：切到其他会话后，本次请求的回调不再写本地状态
+    const epoch = conversationEpoch
+    const isStale = () => epoch !== conversationEpoch
+
     // 流式文本按帧合并：同一帧内到达的 thinking/answer 片段只写入一次状态
     let pendingThinking = ''
     let pendingAnswer = ''
@@ -103,6 +109,12 @@ export const useChatStore = defineStore('chat', () => {
       if (frameId !== null) {
         cancelAnimationFrame(frameId)
         frameId = null
+      }
+      // 已切到其他会话：丢弃未写入的片段（服务端会保存已生成的部分）
+      if (isStale()) {
+        pendingThinking = ''
+        pendingAnswer = ''
+        return
       }
       if (!pendingThinking && !pendingAnswer) return
       let s = getMessageState(assistantMsgId)
@@ -151,6 +163,7 @@ export const useChatStore = defineStore('chat', () => {
           },
           onToolCall(id, name) {
             flushPending()
+            if (isStale()) return
             const s = getMessageState(assistantMsgId)
             const tools = new Map(s.activeTools)
             tools.set(id, { name, state: 'running' })
@@ -160,6 +173,7 @@ export const useChatStore = defineStore('chat', () => {
             })
           },
           onToolProgress(id, _progress, message) {
+            if (isStale()) return
             const s = getMessageState(assistantMsgId)
             const tools = new Map(s.activeTools)
             const tool = tools.get(id)
@@ -169,6 +183,7 @@ export const useChatStore = defineStore('chat', () => {
             }
           },
           onToolResult(id, result) {
+            if (isStale()) return
             const s = getMessageState(assistantMsgId)
             const tools = new Map(s.activeTools)
             const tool = tools.get(id)
@@ -180,6 +195,7 @@ export const useChatStore = defineStore('chat', () => {
           onComplete(messageId, conversationId, userMessageId) {
             // 先把本帧尚未写入的片段落下，再做收尾
             flushPending()
+            if (isStale()) return
             // 如果是新会话，更新会话 ID
             if (conversationId && !currentConversationId.value) {
               currentConversationId.value = conversationId
@@ -228,6 +244,7 @@ export const useChatStore = defineStore('chat', () => {
           },
           onError(message) {
             flushPending()
+            if (isStale()) return
             const s = getMessageState(assistantMsgId)
             messageStates.value.set(assistantMsgId, transitionPhase(s, 'error'))
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
@@ -240,6 +257,8 @@ export const useChatStore = defineStore('chat', () => {
       )
     } catch (err: any) {
       flushPending()
+      // 因切换会话被中断：本地列表已属于新会话，不再处理这条消息
+      if (isStale()) return
       const aborted = controller.signal.aborted || err?.name === 'AbortError'
       const idx = messages.value.findIndex(m => m.id === assistantMsgId)
       if (idx !== -1) {
@@ -258,8 +277,13 @@ export const useChatStore = defineStore('chat', () => {
       }
     } finally {
       flushPending()
-      streaming.value = false
-      streamingMessageId.value = null
+      // 仅当本次请求仍是当前活动请求时才重置流式标记；
+      // 已被 abortStream 处理过，或新请求已经开始时，不能覆盖新请求的状态
+      if (abortController.value === controller) {
+        abortController.value = null
+        streaming.value = false
+        streamingMessageId.value = null
+      }
     }
   }
 
@@ -418,6 +442,12 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function setConversation(id: string | null) {
+    if (id !== currentConversationId.value) {
+      // 流式中切到其他会话：先中断当前回复（服务端会保存已生成部分）
+      if (streaming.value) abortStream()
+      // 代次递增后，旧请求的回调不再写入本地状态，避免与新会话的 loadMessages 互相覆盖
+      conversationEpoch++
+    }
     currentConversationId.value = id
     if (!id) {
       messages.value = []
@@ -427,6 +457,8 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   function newConversation() {
+    if (streaming.value) abortStream()
+    conversationEpoch++
     currentConversationId.value = null
     messages.value = []
     messageStates.value = new Map()
