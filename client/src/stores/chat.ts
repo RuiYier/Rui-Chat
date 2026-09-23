@@ -86,14 +86,45 @@ export const useChatStore = defineStore('chat', () => {
       createdAt: new Date().toISOString(),
     }
     messages.value.push(assistantMsg)
+    // 取数组中的响应式代理，流式写入时直接引用，避免每个 token 都 findIndex
+    const liveAssistant = messages.value[messages.value.length - 1]
 
-    // 初始化消息状态
-    const state = createMessageState()
-    const newStates = new Map(messageStates.value)
-    newStates.set(assistantMsgId, state)
-    messageStates.value = newStates
+    // 初始化消息状态（ref 包裹的 Map 本身就是响应式代理，直接 set 即可，无需整表复制）
+    messageStates.value.set(assistantMsgId, createMessageState())
     streamingMessageId.value = assistantMsgId
     streaming.value = true
+
+    // 流式文本按帧合并：同一帧内到达的 thinking/answer 片段只写入一次状态
+    let pendingThinking = ''
+    let pendingAnswer = ''
+    let frameId: number | null = null
+
+    function flushPending() {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId)
+        frameId = null
+      }
+      if (!pendingThinking && !pendingAnswer) return
+      let s = getMessageState(assistantMsgId)
+      if (pendingThinking) {
+        s = appendThinking(s, pendingThinking)
+        liveAssistant.thinking = (liveAssistant.thinking || '') + pendingThinking
+        pendingThinking = ''
+      }
+      if (pendingAnswer) {
+        if (s.phase === 'idle' || s.phase === 'thinking') {
+          s = transitionPhase(s, 'answering')
+        }
+        s = appendAnswer(s, pendingAnswer)
+        liveAssistant.content += pendingAnswer
+        pendingAnswer = ''
+      }
+      messageStates.value.set(assistantMsgId, s)
+    }
+
+    function scheduleFlush() {
+      if (frameId === null) frameId = requestAnimationFrame(() => flushPending())
+    }
 
     // 创建 AbortController 以支持取消流式传输
     const controller = new AbortController()
@@ -107,41 +138,22 @@ export const useChatStore = defineStore('chat', () => {
         attachments,
         {
           onThinking(thinkingContent) {
-            const s = getMessageState(assistantMsgId)
-            const newStates = new Map(messageStates.value)
-            newStates.set(assistantMsgId, appendThinking(s, thinkingContent))
-            messageStates.value = newStates
-            // 同时更新消息对象
-            const idx = messages.value.findIndex(m => m.id === assistantMsgId)
-            if (idx !== -1) {
-              messages.value[idx].thinking = (messages.value[idx].thinking || '') + thinkingContent
-            }
+            pendingThinking += thinkingContent
+            scheduleFlush()
           },
           onAnswer(answerContent) {
-            const s = getMessageState(assistantMsgId)
-            let updated = s
-            if (s.phase === 'idle' || s.phase === 'thinking') {
-              updated = transitionPhase(s, 'answering')
-            }
-            updated = appendAnswer(updated, answerContent)
-            const newStates = new Map(messageStates.value)
-            newStates.set(assistantMsgId, updated)
-            messageStates.value = newStates
-            const idx = messages.value.findIndex(m => m.id === assistantMsgId)
-            if (idx !== -1) {
-              messages.value[idx].content += answerContent
-            }
+            pendingAnswer += answerContent
+            scheduleFlush()
           },
           onToolCall(id, name) {
+            flushPending()
             const s = getMessageState(assistantMsgId)
             const tools = new Map(s.activeTools)
             tools.set(id, { name, state: 'running' })
-            const newStates = new Map(messageStates.value)
-            newStates.set(assistantMsgId, {
+            messageStates.value.set(assistantMsgId, {
               ...transitionPhase(s, 'tool_calling'),
               activeTools: tools,
             })
-            messageStates.value = newStates
           },
           onToolProgress(id, _progress, message) {
             const s = getMessageState(assistantMsgId)
@@ -149,9 +161,7 @@ export const useChatStore = defineStore('chat', () => {
             const tool = tools.get(id)
             if (tool) {
               tools.set(id, { ...tool, progress: message })
-              const newStates = new Map(messageStates.value)
-              newStates.set(assistantMsgId, { ...s, activeTools: tools })
-              messageStates.value = newStates
+              messageStates.value.set(assistantMsgId, { ...s, activeTools: tools })
             }
           },
           onToolResult(id, result) {
@@ -160,12 +170,12 @@ export const useChatStore = defineStore('chat', () => {
             const tool = tools.get(id)
             if (tool) {
               tools.set(id, { ...tool, state: 'done', result })
-              const newStates = new Map(messageStates.value)
-              newStates.set(assistantMsgId, { ...s, activeTools: tools })
-              messageStates.value = newStates
+              messageStates.value.set(assistantMsgId, { ...s, activeTools: tools })
             }
           },
           onComplete(messageId, conversationId, userMessageId) {
+            // 先把本帧尚未写入的片段落下，再做收尾
+            flushPending()
             // 如果是新会话，更新会话 ID
             if (conversationId && !currentConversationId.value) {
               currentConversationId.value = conversationId
@@ -178,9 +188,7 @@ export const useChatStore = defineStore('chat', () => {
 
             // 清空活跃工具
             const s = getMessageState(assistantMsgId)
-            const newStates = new Map(messageStates.value)
-            newStates.set(assistantMsgId, { ...s, activeTools: new Map() })
-            messageStates.value = newStates
+            messageStates.value.set(assistantMsgId, { ...s, activeTools: new Map() })
 
             // 采纳服务端消息 ID（最后执行：complete 是流式结束前的最后一个数据事件，
             // 此后不会再触发 onThinking/onAnswer 等回调，它们仍按乐观 nanoid ID 查找，
@@ -199,13 +207,11 @@ export const useChatStore = defineStore('chat', () => {
                 messages.value[aIdx].conversationId = currentConversationId.value || ''
               }
               // 状态 Map 的键跟随迁移，避免按消息 ID 查找状态时丢失
-              const stateMap = new Map(messageStates.value)
-              const st = stateMap.get(assistantMsgId)
+              const st = messageStates.value.get(assistantMsgId)
               if (st) {
-                stateMap.delete(assistantMsgId)
-                stateMap.set(messageId, st)
+                messageStates.value.delete(assistantMsgId)
+                messageStates.value.set(messageId, st)
               }
-              messageStates.value = stateMap
               // 保持流式标记指向新 ID，直至 finally 统一清理
               if (streamingMessageId.value === assistantMsgId) {
                 streamingMessageId.value = messageId
@@ -217,10 +223,9 @@ export const useChatStore = defineStore('chat', () => {
             useConversationStore().renameConversationLocally(conversationId, title)
           },
           onError(message) {
+            flushPending()
             const s = getMessageState(assistantMsgId)
-            const newStates = new Map(messageStates.value)
-            newStates.set(assistantMsgId, transitionPhase(s, 'error'))
-            messageStates.value = newStates
+            messageStates.value.set(assistantMsgId, transitionPhase(s, 'error'))
             const idx = messages.value.findIndex(m => m.id === assistantMsgId)
             if (idx !== -1) {
               messages.value[idx].content = `错误: ${message}`
@@ -230,20 +235,17 @@ export const useChatStore = defineStore('chat', () => {
         controller.signal,
       )
     } catch (err: any) {
+      flushPending()
       const aborted = controller.signal.aborted || err?.name === 'AbortError'
       const idx = messages.value.findIndex(m => m.id === assistantMsgId)
       if (idx !== -1) {
         if (aborted) {
           // 用户主动中断：保留已生成的部分内容；一个字都没生成则移除空占位
           if (messages.value[idx].content) {
-            const stateMap = new Map(messageStates.value)
-            stateMap.set(assistantMsgId, { ...getMessageState(assistantMsgId), phase: 'idle', activeTools: new Map() })
-            messageStates.value = stateMap
+            messageStates.value.set(assistantMsgId, { ...getMessageState(assistantMsgId), phase: 'idle', activeTools: new Map() })
           } else {
             messages.value.splice(idx, 1)
-            const stateMap = new Map(messageStates.value)
-            stateMap.delete(assistantMsgId)
-            messageStates.value = stateMap
+            messageStates.value.delete(assistantMsgId)
           }
           ElMessage.info('已停止生成')
         } else {
@@ -251,6 +253,7 @@ export const useChatStore = defineStore('chat', () => {
         }
       }
     } finally {
+      flushPending()
       streaming.value = false
       streamingMessageId.value = null
     }
@@ -273,12 +276,8 @@ export const useChatStore = defineStore('chat', () => {
   /** 从 fromIndex（含）开始截断本地消息，并清理对应的 MessageState */
   function truncateLocal(fromIndex: number) {
     const removed = messages.value.splice(fromIndex)
-    if (removed.length > 0) {
-      const stateMap = new Map(messageStates.value)
-      for (const m of removed) {
-        stateMap.delete(m.id)
-      }
-      messageStates.value = stateMap
+    for (const m of removed) {
+      messageStates.value.delete(m.id)
     }
   }
 
